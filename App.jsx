@@ -2,23 +2,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View, ScrollView,  } from 'react-native';
 
 export default function App() {
+
+  const cards = [
+    { id: 1, title: 'ბარათი 1', text: 'ეს არის პირველი ბარათი' },
+    { id: 2, title: 'ბარათი 2', text: 'მეორე ბარათის აღწერა' },
+    { id: 3, title: 'ბარათი 3', text: 'ეს ბარათი შეიცავს სხვა ტექსტს' },
+    { id: 4, title: 'ბარათი 4', text: 'მეტი ბარათები რომ იყოს, შეგვიძლია დავამატოთ' },
+    { id: 5, title: 'ბარათი 5', text: 'ScrollView საშუალებას გვაძლევს ყველაფერი დავასქროლოთ' },
+    { id: 6, title: 'ბარათი 6', text: 'ScrollView საშუალებას გვაძლევს ყველაფერი დავასქროლოთ' },
+    { id: 7, title: 'ბარათი 7', text: 'ScrollView საშუალებას გვაძლევს ყველაფერი დავასქროლოთ' },
+    { id: 8, title: 'ბარათი 8', text: 'ScrollView საშუალებას გვაძლევს ყველაფერი დავასქროლოთ' },
+    { id: 9, title: 'ბარათი 9', text: 'ScrollView საშუალებას გვაძლევს ყველაფერი დავასქროლოთ' },
+
+  ];
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.bigSquare1}>
-          <View style={styles.smallSquare1} />
-          <View style={styles.smallSquare2} />
-        </View>
-        <View style={styles.bigSquare2}>
-          <View style={styles.smallSquare3} />
-          <View style={styles.smallSquare4} />
-        </View>
-
-        <StatusBar style="auto" />
-      </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {cards.map((card) => (
+          <View key={card.id} style={styles.card}>
+            <Text style={styles.cardTitle}>{card.title}</Text>
+            <Text style={styles.cardText}>{card.text}</Text>
+          </View>
+        ))}
+      </ScrollView>
+      <StatusBar style="auto" />
     </SafeAreaView>
   );
 }
@@ -26,50 +37,28 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f5f5f5',
   },
-  container: {
-    flex: 1,
+  scrollContainer: {
+    padding: 20,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-
- 
-  bigSquare1: {
-    width: 180,
-    height: 180,
-    backgroundColor: '#ff6666',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    marginBottom: 20,
+  card: {
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 15,
+    shadowColor: '#000',
+    
   },
-  bigSquare2: {
-    width: 200,
-    height: 200,
-    backgroundColor: '#66ccff',
-    alignItems: 'center',
-    justifyContent: 'space-around',
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
-
-
-  smallSquare1: {
-    width: 60,
-    height: 60,
-    backgroundColor: '#ffff66',
-  },
-  smallSquare2: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#66ff66',
-  },
-  smallSquare3: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#ffcc66',
-  },
-  smallSquare4: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#cc99ff',
+  cardText: {
+    fontSize: 14,
+    color: '#555',
   },
 });
