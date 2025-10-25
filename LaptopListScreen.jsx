@@ -1,12 +1,27 @@
-import React from 'react';
-import { View, FlatList, Button, StyleSheet } from 'react-native';
-import Card from './Card';
+import React from "react";
+import { View, FlatList, StyleSheet } from "react-native";
+import Card from "./Card";
 
 export default function LaptopListScreen({ navigation }) {
   const laptops = [
-    { id: '1', title: 'MacBook Air M3', price: 5000, description: 'ძლიერი და მსუბუქი.' },
-    { id: '2', title: 'Asus TUF', price: 4200, description: 'გეიმინგისთვის შესაფერისი.' },
-    { id: '3', title: 'HP Spectre', price: 4700, description: 'პროფესიონალური დიზაინი.' },
+    {
+      id: "1",
+      title: "MacBook Air M3",
+      price: 5000,
+      description: "ძლიერი და მსუბუქი.",
+    },
+    {
+      id: "2",
+      title: "Asus TUF",
+      price: 4200,
+      description: "გეიმინგისთვის შესაფერისი.",
+    },
+    {
+      id: "3",
+      title: "HP Spectre",
+      price: 4700,
+      description: "პროფესიონალური დიზაინი.",
+    },
   ];
 
   return (
@@ -19,10 +34,12 @@ export default function LaptopListScreen({ navigation }) {
             title={item.title}
             price={item.price}
             description={item.description}
+            onDetailsPress={() =>
+              navigation.navigate("LaptopDetails", { laptop: item })
+            }
           />
         )}
       />
-      <Button title="უკან ტელეფონებზე" onPress={() => navigation.navigate('Phones')} />
     </View>
   );
 }
