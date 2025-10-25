@@ -1,8 +1,49 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useRoute } from "@react-navigation/native";
 
-export default function PhoneDetailsScreen({ route }) {
+export default function PhoneDetailsScreen() {
+  const route = useRoute();
   const { phone } = route.params || {};
+
+  
+  const getPhoneSpecs = (phoneTitle) => {
+    const specs = {
+      "iPhone 15": {
+        screen: "6.1 ინჩი OLED",
+        processor: "A17 Pro",
+        camera: "48MP მთავარი",
+        battery: "მთელი დღე მუშაობა",
+        memory: "128GB / 256GB / 512GB",
+        colors: "შავი, თეთრი, ლურჯი",
+        warranty: "1 წელი",
+        waterproof: "IP68",
+      },
+      "Samsung S24": {
+        screen: "6.2 ინჩი AMOLED",
+        processor: "Snapdragon 8 Gen 3",
+        camera: "50MP ძირითადი, 12MP ულტრა ფართო",
+        battery: "4000mAh, სწრაფი დატენვა",
+        memory: "256GB / 512GB",
+        colors: "ვიოლეტი, შავი, ნაცრისფერი",
+        warranty: "2 წელი",
+        waterproof: "IP68",
+      },
+      "Xiaomi 14": {
+        screen: "6.36 ინჩი AMOLED",
+        processor: "Snapdragon 8 Gen 2",
+        camera: "50MP Leica ოპტიკა",
+        battery: "4610mAh, 90W დატენვა",
+        memory: "128GB / 256GB",
+        colors: "შავი, თეთრი, მწვანე",
+        warranty: "1 წელი",
+        waterproof: "IP68",
+      },
+    };
+    return specs[phoneTitle] || specs["iPhone 15"];
+  };
+
+  const specs = getPhoneSpecs(phone?.title);
 
   return (
     <ScrollView style={styles.container}>
@@ -19,18 +60,18 @@ export default function PhoneDetailsScreen({ route }) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>სპეციფიკაციები:</Text>
-          <Text style={styles.text}>• ეკრანი: 6.1 ინჩი OLED</Text>
-          <Text style={styles.text}>• პროცესორი: A17 Pro</Text>
-          <Text style={styles.text}>• კამერა: 48MP მთავარი</Text>
-          <Text style={styles.text}>• ბატარეა: მთელი დღე მუშაობა</Text>
-          <Text style={styles.text}>• მეხსიერება: 128GB / 256GB / 512GB</Text>
+          <Text style={styles.text}>• ეკრანი: {specs.screen}</Text>
+          <Text style={styles.text}>• პროცესორი: {specs.processor}</Text>
+          <Text style={styles.text}>• კამერა: {specs.camera}</Text>
+          <Text style={styles.text}>• ბატარეა: {specs.battery}</Text>
+          <Text style={styles.text}>• მეხსიერება: {specs.memory}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>დამატებითი ინფორმაცია:</Text>
-          <Text style={styles.text}>• ფერები: შავი, თეთრი, ლურჯი</Text>
-          <Text style={styles.text}>• გარანტია: 1 წელი</Text>
-          <Text style={styles.text}>• წყალგაუმტარობა: IP68</Text>
+          <Text style={styles.text}>• ფერები: {specs.colors}</Text>
+          <Text style={styles.text}>• გარანტია: {specs.warranty}</Text>
+          <Text style={styles.text}>• წყალგაუმტარობა: {specs.waterproof}</Text>
         </View>
       </View>
     </ScrollView>

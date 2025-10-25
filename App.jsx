@@ -8,10 +8,10 @@ import PhoneListScreen from "./PhoneListScreen";
 import LaptopListScreen from "./LaptopListScreen";
 import PhoneDetailsScreen from "./PhoneDetailsScreen";
 import LaptopDetailsScreen from "./LaptopDetailsScreen";
+import NotFoundScreen from "./NotFoundScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-
 
 function PhoneStack() {
   return (
@@ -25,6 +25,11 @@ function PhoneStack() {
         name="PhoneDetails"
         component={PhoneDetailsScreen}
         options={{ title: "ტელეფონის დეტალები" }}
+      />
+      <Stack.Screen
+        name="NotFound"
+        component={NotFoundScreen}
+        options={{ title: "გვერდი ვერ მოიძებნა" }}
       />
     </Stack.Navigator>
   );
@@ -42,6 +47,11 @@ function LaptopStack() {
         name="LaptopDetails"
         component={LaptopDetailsScreen}
         options={{ title: "ლეპტოპის დეტალები" }}
+      />
+      <Stack.Screen
+        name="NotFound"
+        component={NotFoundScreen}
+        options={{ title: "გვერდი ვერ მოიძებნა" }}
       />
     </Stack.Navigator>
   );

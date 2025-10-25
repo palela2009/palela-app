@@ -1,8 +1,52 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useRoute } from "@react-navigation/native";
 
-export default function LaptopDetailsScreen({ route }) {
+export default function LaptopDetailsScreen() {
+  const route = useRoute();
   const { laptop } = route.params || {};
+
+
+  const getLaptopSpecs = (laptopTitle) => {
+    const specs = {
+      "MacBook Air M3": {
+        processor: "Apple M3 ჩიპი",
+        ram: "8GB / 16GB / 24GB",
+        storage: "256GB / 512GB / 1TB SSD",
+        screen: "13.6 ინჩი Liquid Retina",
+        battery: "18 საათამდე",
+        colors: "ვერცხლისფერი, ღია ნაცრისფერი, ღია თოვლისფერი",
+        weight: "1.24 კგ",
+        warranty: "1 წელი",
+        ports: "2x USB-C (Thunderbolt), MagSafe 3",
+      },
+      "Asus TUF": {
+        processor: "Intel Core i7-13700H",
+        ram: "16GB / 32GB DDR5",
+        storage: "512GB / 1TB NVMe SSD",
+        screen: "15.6 ინჩი FHD 144Hz",
+        battery: "6-8 საათი გეიმინგზე",
+        colors: "შავი, რუხი",
+        weight: "2.2 კგ",
+        warranty: "2 წელი",
+        ports: "USB-C, USB 3.2, HDMI 2.1, RJ45",
+      },
+      "HP Spectre": {
+        processor: "Intel Core i7-1355U",
+        ram: "16GB / 32GB LPDDR4x",
+        storage: "512GB / 1TB PCIe SSD",
+        screen: "13.5 ინჩი OLED 3K2K",
+        battery: "10-12 საათი",
+        colors: "ნოქტირნალ ლურჯი, ბორდო ოქრო",
+        weight: "1.36 კგ",
+        warranty: "1 წელი",
+        ports: "2x Thunderbolt 4, USB-A, MicroSD",
+      },
+    };
+    return specs[laptopTitle] || specs["MacBook Air M3"];
+  };
+
+  const specs = getLaptopSpecs(laptop?.title);
 
   return (
     <ScrollView style={styles.container}>
@@ -20,19 +64,19 @@ export default function LaptopDetailsScreen({ route }) {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>სპეციფიკაციები:</Text>
-          <Text style={styles.text}>• პროცესორი: M3 ჩიპი</Text>
-          <Text style={styles.text}>• RAM: 8GB / 16GB</Text>
-          <Text style={styles.text}>• შენახვა: 256GB / 512GB SSD</Text>
-          <Text style={styles.text}>• ეკრანი: 13.6 ინჩი Retina</Text>
-          <Text style={styles.text}>• ბატარეა: 18 საათამდე</Text>
+          <Text style={styles.text}>• პროცესორი: {specs.processor}</Text>
+          <Text style={styles.text}>• RAM: {specs.ram}</Text>
+          <Text style={styles.text}>• შენახვა: {specs.storage}</Text>
+          <Text style={styles.text}>• ეკრანი: {specs.screen}</Text>
+          <Text style={styles.text}>• ბატარეა: {specs.battery}</Text>
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>დამატებითი ინფორმაცია:</Text>
-          <Text style={styles.text}>• ფერები: ვერცხლი, ნაცრისფერი</Text>
-          <Text style={styles.text}>• წონა: 1.24 კგ</Text>
-          <Text style={styles.text}>• გარანტია: 1 წელი</Text>
-          <Text style={styles.text}>• პორტები: 2x USB-C, MagSafe</Text>
+          <Text style={styles.text}>• ფერები: {specs.colors}</Text>
+          <Text style={styles.text}>• წონა: {specs.weight}</Text>
+          <Text style={styles.text}>• გარანტია: {specs.warranty}</Text>
+          <Text style={styles.text}>• პორტები: {specs.ports}</Text>
         </View>
       </View>
     </ScrollView>
