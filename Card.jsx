@@ -1,26 +1,21 @@
-import { StyleSheet, Text, View } from 'react-native';
-
+import { View, Text, StyleSheet } from 'react-native';
+import React from 'react';
 export default function Card({ title, price, description }) {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
-      <Text style={styles.price}>{price} ₾</Text>
-      <Text style={styles.description}>{description}</Text>
+      <Text style={styles.price}>ფასი: {price} ₾</Text>
+      <Text style={styles.desc}>{description}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    width: '90%',
-    backgroundColor: 'white',
-    borderRadius: 10,
+    backgroundColor: '#fff',
     padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
+    marginVertical: 8,
+    borderRadius: 10,
     elevation: 3,
   },
   title: {
@@ -28,12 +23,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   price: {
-    fontSize: 16,
-    color: '#008000',
-    marginVertical: 4,
+    color: '#007bff',
   },
-  description: {
-    fontSize: 14,
+  desc: {
+    marginTop: 5,
     color: '#555',
   },
 });
