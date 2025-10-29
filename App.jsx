@@ -9,6 +9,8 @@ import LaptopListScreen from "./LaptopListScreen";
 import PhoneDetailsScreen from "./PhoneDetailsScreen";
 import LaptopDetailsScreen from "./LaptopDetailsScreen";
 import NotFoundScreen from "./NotFoundScreen";
+import ProfileScreen from "./ProfileScreen";
+import EditProfileScreen from "./EditProfileScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,6 +59,23 @@ function LaptopStack() {
   );
 }
 
+function ProfileStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="ProfileView"
+        component={ProfileScreen}
+        options={{ title: "პროფილი" }}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ title: "რედაქტირება" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function App() {
   return (
     <NavigationContainer>
@@ -69,6 +88,8 @@ export default function App() {
               iconName = focused ? "phone-portrait" : "phone-portrait-outline";
             } else if (route.name === "Laptops") {
               iconName = focused ? "laptop" : "laptop-outline";
+            } else if (route.name === "Profile") {
+              iconName = focused ? "person" : "person-outline";
             }
 
             return <Ionicons name={iconName} size={size} color={color} />;
@@ -90,6 +111,14 @@ export default function App() {
           component={LaptopStack}
           options={{
             title: "ლეპტოპები",
+            headerShown: false,
+          }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileStack}
+          options={{
+            title: "პროფილი",
             headerShown: false,
           }}
         />

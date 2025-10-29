@@ -1,14 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 
 export default function LaptopDetailsScreen() {
-  const route = useRoute();
-  const { laptop } = route.params || {};
+  const { id, title, price, description } = useLocalSearchParams();
 
-
-  const getLaptopSpecs = (laptopTitle) => {
-    const specs = {
+  const getLaptopSpecs = (laptopTitle: string) => {
+    const specs: Record<string, any> = {
       "MacBook Air M3": {
         processor: "Apple M3 ჩიპი",
         ram: "8GB / 16GB / 24GB",
@@ -46,20 +44,17 @@ export default function LaptopDetailsScreen() {
     return specs[laptopTitle] || specs["MacBook Air M3"];
   };
 
-  const specs = getLaptopSpecs(laptop?.title);
+  const specs = getLaptopSpecs(title as string);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.detailsCard}>
-        <Text style={styles.title}>{laptop?.title || "MacBook Air M3"}</Text>
-        <Text style={styles.price}>ფასი: {laptop?.price || 5000} ₾</Text>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.price}>ფასი: {price} ₾</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>აღწერა:</Text>
-          <Text style={styles.text}>
-            {laptop?.description ||
-              "ძლიერი და მსუბუქი ლეპტოპი პროფესიონალებისთვის."}
-          </Text>
+          <Text style={styles.text}>{description}</Text>
         </View>
 
         <View style={styles.section}>

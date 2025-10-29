@@ -1,14 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useLocalSearchParams } from "expo-router";
 
 export default function PhoneDetailsScreen() {
-  const route = useRoute();
-  const { phone } = route.params || {};
+  const { id, title, price, description } = useLocalSearchParams();
 
-  
-  const getPhoneSpecs = (phoneTitle) => {
-    const specs = {
+  const getPhoneSpecs = (phoneTitle: string) => {
+    const specs: Record<string, any> = {
       "iPhone 15": {
         screen: "6.1 ინჩი OLED",
         processor: "A17 Pro",
@@ -43,19 +41,17 @@ export default function PhoneDetailsScreen() {
     return specs[phoneTitle] || specs["iPhone 15"];
   };
 
-  const specs = getPhoneSpecs(phone?.title);
+  const specs = getPhoneSpecs(title as string);
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.detailsCard}>
-        <Text style={styles.title}>{phone?.title || "iPhone 15"}</Text>
-        <Text style={styles.price}>ფასი: {phone?.price || 4200} ₾</Text>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.price}>ფასი: {price} ₾</Text>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>აღწერა:</Text>
-          <Text style={styles.text}>
-            {phone?.description || "ახალი მოდელი უახლესი ტექნოლოგიებით."}
-          </Text>
+          <Text style={styles.text}>{description}</Text>
         </View>
 
         <View style={styles.section}>
