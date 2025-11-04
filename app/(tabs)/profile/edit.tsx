@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,49 +10,39 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-
-const profileReducer = (state: any, action: any) => {
-  switch (action.type) {
-    case "UPDATE_FIELD":
-      return {
-        ...state,
-        [action.field]: action.value,
-      };
-    case "RESET":
-      return action.initialState;
-    case "SAVE":
-      return state;
-    default:
-      return state;
-  }
-};
+import { useProfile } from "../../../contexts/ProfileContext";
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { profile, dispatch } = useProfile();
 
-  const initialState = {
-    firstName: "გიორგი",
-    lastName: "ბერიძე",
-    email: "giorgi.beridze@example.com",
-    phone: "+995 555 12 34 56",
-  };
-
-  const [profile, dispatch] = useReducer(profileReducer, initialState);
+  // Local state for form inputs
+  const [formData, setFormData] = useState({
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    email: profile.email,
+    phone: profile.phone,
+  });
 
   const handleSave = () => {
-    if (!profile.firstName || !profile.lastName || !profile.email || !profile.phone) {
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       Alert.alert("შეცდომა", "გთხოვთ შეავსოთ ყველა ველი");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(profile.email)) {
+    if (!emailRegex.test(formData.email)) {
       Alert.alert("შეცდომა", "გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა");
       return;
     }
 
+    // Update global state with all fields
+    dispatch({ type: "UPDATE_FIELD", field: "firstName", value: formData.firstName });
+    dispatch({ type: "UPDATE_FIELD", field: "lastName", value: formData.lastName });
+    dispatch({ type: "UPDATE_FIELD", field: "email", value: formData.email });
+    dispatch({ type: "UPDATE_FIELD", field: "phone", value: formData.phone });
     dispatch({ type: "SAVE" });
+
     Alert.alert("წარმატება", "პროფილი წარმატებით განახლდა", [
       {
         text: "კარგი",
@@ -69,7 +59,15 @@ export default function EditProfileScreen() {
         { text: "არა", style: "cancel" },
         {
           text: "დიახ",
-          onPress: () => dispatch({ type: "RESET", initialState }),
+          onPress: () => {
+            // Reset to global state values
+            setFormData({
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+              email: profile.email,
+              phone: profile.phone,
+            });
+          },
         },
       ]
     );
@@ -86,9 +84,9 @@ export default function EditProfileScreen() {
             <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
             <TextInput
               style={styles.input}
-              value={profile.firstName}
+              value={formData.firstName}
               onChangeText={(value) =>
-                dispatch({ type: "UPDATE_FIELD", field: "firstName", value })
+                setFormData({ ...formData, firstName: value })
               }
               placeholder="შეიყვანეთ სახელი"
             />
@@ -101,9 +99,9 @@ export default function EditProfileScreen() {
             <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
             <TextInput
               style={styles.input}
-              value={profile.lastName}
+              value={formData.lastName}
               onChangeText={(value) =>
-                dispatch({ type: "UPDATE_FIELD", field: "lastName", value })
+                setFormData({ ...formData, lastName: value })
               }
               placeholder="შეიყვანეთ გვარი"
             />
@@ -116,9 +114,9 @@ export default function EditProfileScreen() {
             <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
             <TextInput
               style={styles.input}
-              value={profile.email}
+              value={formData.email}
               onChangeText={(value) =>
-                dispatch({ type: "UPDATE_FIELD", field: "email", value })
+                setFormData({ ...formData, email: value })
               }
               placeholder="example@email.com"
               keyboardType="email-address"
@@ -133,9 +131,9 @@ export default function EditProfileScreen() {
             <Ionicons name="call-outline" size={20} color="#666" style={styles.icon} />
             <TextInput
               style={styles.input}
-              value={profile.phone}
+              value={formData.phone}
               onChangeText={(value) =>
-                dispatch({ type: "UPDATE_FIELD", field: "phone", value })
+                setFormData({ ...formData, phone: value })
               }
               placeholder="+995 555 12 34 56"
               keyboardType="phone-pad"
