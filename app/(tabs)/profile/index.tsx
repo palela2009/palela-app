@@ -2,16 +2,11 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useProfile } from "../../../contexts/ProfileContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
-
-  const profileData = {
-    firstName: "გიორგი",
-    lastName: "ბერიძე",
-    email: "giorgi.beridze@example.com",
-    phone: "+995 555 12 34 56",
-  };
+  const { profile } = useProfile();
 
   return (
     <ScrollView style={styles.container}>
@@ -20,7 +15,7 @@ export default function ProfileScreen() {
           <Ionicons name="person-circle" size={100} color="#007bff" />
         </View>
         <Text style={styles.name}>
-          {profileData.firstName} {profileData.lastName}
+          {profile.firstName} {profile.lastName}
         </Text>
       </View>
 
@@ -31,7 +26,7 @@ export default function ProfileScreen() {
           <Ionicons name="person-outline" size={24} color="#666" />
           <View style={styles.infoText}>
             <Text style={styles.label}>სახელი</Text>
-            <Text style={styles.value}>{profileData.firstName}</Text>
+            <Text style={styles.value}>{profile.firstName}</Text>
           </View>
         </View>
 
@@ -39,7 +34,7 @@ export default function ProfileScreen() {
           <Ionicons name="person-outline" size={24} color="#666" />
           <View style={styles.infoText}>
             <Text style={styles.label}>გვარი</Text>
-            <Text style={styles.value}>{profileData.lastName}</Text>
+            <Text style={styles.value}>{profile.lastName}</Text>
           </View>
         </View>
 
@@ -47,7 +42,7 @@ export default function ProfileScreen() {
           <Ionicons name="mail-outline" size={24} color="#666" />
           <View style={styles.infoText}>
             <Text style={styles.label}>ელ-ფოსტა</Text>
-            <Text style={styles.value}>{profileData.email}</Text>
+            <Text style={styles.value}>{profile.email}</Text>
           </View>
         </View>
 
@@ -55,7 +50,7 @@ export default function ProfileScreen() {
           <Ionicons name="call-outline" size={24} color="#666" />
           <View style={styles.infoText}>
             <Text style={styles.label}>ტელეფონი</Text>
-            <Text style={styles.value}>{profileData.phone}</Text>
+            <Text style={styles.value}>{profile.phone}</Text>
           </View>
         </View>
       </View>
