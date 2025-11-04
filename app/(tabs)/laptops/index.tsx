@@ -6,7 +6,7 @@ import { useProfile } from "../../../contexts/ProfileContext";
 
 export default function LaptopListScreen() {
   const router = useRouter();
-  const { profile } = useProfile(); // გლობალური state-ის წაკითხვა
+  const { profile } = useProfile(); 
   
   const laptops = [
     { id: "1", title: "MacBook Air M3", price: 5000, description: "ძლიერი და მსუბუქი." },

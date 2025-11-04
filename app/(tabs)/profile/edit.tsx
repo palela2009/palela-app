@@ -16,7 +16,6 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const { profile, dispatch } = useProfile();
 
-  // Local state for form inputs
   const [formData, setFormData] = useState({
     firstName: profile.firstName,
     lastName: profile.lastName,
@@ -36,7 +35,6 @@ export default function EditProfileScreen() {
       return;
     }
 
-    // Update global state with all fields
     dispatch({ type: "UPDATE_FIELD", field: "firstName", value: formData.firstName });
     dispatch({ type: "UPDATE_FIELD", field: "lastName", value: formData.lastName });
     dispatch({ type: "UPDATE_FIELD", field: "email", value: formData.email });
@@ -60,7 +58,6 @@ export default function EditProfileScreen() {
         {
           text: "დიახ",
           onPress: () => {
-            // Reset to global state values
             setFormData({
               firstName: profile.firstName,
               lastName: profile.lastName,

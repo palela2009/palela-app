@@ -6,7 +6,7 @@ import { useProfile } from "../../../contexts/ProfileContext";
 
 export default function PhoneListScreen() {
   const router = useRouter();
-  const { profile } = useProfile(); // გლობალური state-ის წაკითხვა
+  const { profile } = useProfile(); 
   
   const phones = [
     { id: "1", title: "iPhone 15", price: 4200, description: "ახალი მოდელი." },

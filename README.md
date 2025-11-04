@@ -1,4 +1,20 @@
-# Palela App - Global State Management with useContext & useReducer
+# Palela App - Full Stack React Native App
+
+## 🚀 Features
+
+### 🔐 Authentication System
+
+- **ავტორიზაცია და რეგისტრაცია** Formik + Yup ვალიდაციით
+- **Global Auth State** - useContext + useReducer
+- **Protected Routes** - Tab navigation მხოლოდ ავტორიზებული იუზერებისთვის
+- **Session Management** - Login/Logout functionality
+
+[📖 სრული დოკუმენტაცია: AUTH_DOCUMENTATION.md](./AUTH_DOCUMENTATION.md)
+
+### 🌍 Global State Management
+
+- **ProfileContext** - useContext + useReducer პროფილის მართვისთვის
+- **AuthContext** - useContext + useReducer ავტორიზაციისთვის
 
 ## 📱 აპლიკაციის სტრუქტურა
 
@@ -13,18 +29,25 @@
 const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
 
 // Reducer function
-const profileReducer = (state: ProfileState, action: ProfileAction): ProfileState => {
+const profileReducer = (
+  state: ProfileState,
+  action: ProfileAction
+): ProfileState => {
   switch (action.type) {
     case "UPDATE_FIELD": // ველის განახლება
-    case "RESET":        // საწყისი მნიშვნელობების დაბრუნება
-    case "SAVE":         // შენახვა
+    case "RESET": // საწყისი მნიშვნელობების დაბრუნება
+    case "SAVE": // შენახვა
   }
 };
 
 // Provider component - გარს აკრავს მთელ აპლიკაციას
 export function ProfileProvider({ children }) {
   const [profile, dispatch] = useReducer(profileReducer, initialProfileState);
-  return <ProfileContext.Provider value={{ profile, dispatch }}>...</ProfileContext.Provider>;
+  return (
+    <ProfileContext.Provider value={{ profile, dispatch }}>
+      ...
+    </ProfileContext.Provider>
+  );
 }
 
 // Custom hook - მარტივი წვდომისთვის
@@ -36,7 +59,7 @@ export function useProfile() {
 #### Provider Setup (`app/_layout.tsx`)
 
 ```typescript
-import { ProfileProvider } from '../contexts/ProfileContext';
+import { ProfileProvider } from "../contexts/ProfileContext";
 
 export default function RootLayout() {
   return (
@@ -56,10 +79,12 @@ import { useProfile } from "../../../contexts/ProfileContext";
 
 export default function ProfileScreen() {
   const { profile } = useProfile(); // წაიკითხე გლობალური state
-  
+
   return (
     <View>
-      <Text>{profile.firstName} {profile.lastName}</Text>
+      <Text>
+        {profile.firstName} {profile.lastName}
+      </Text>
       <Text>{profile.email}</Text>
       <Text>{profile.phone}</Text>
     </View>
@@ -75,16 +100,24 @@ import { useProfile } from "../../../contexts/ProfileContext";
 export default function EditProfileScreen() {
   const { profile, dispatch } = useProfile(); // წაიკითხე state და dispatch
   const [formData, setFormData] = useState({ ...profile }); // ლოკალური state ფორმისთვის
-  
+
   const handleSave = () => {
     // განაახლე გლობალური state
-    dispatch({ type: "UPDATE_FIELD", field: "firstName", value: formData.firstName });
-    dispatch({ type: "UPDATE_FIELD", field: "lastName", value: formData.lastName });
+    dispatch({
+      type: "UPDATE_FIELD",
+      field: "firstName",
+      value: formData.firstName,
+    });
+    dispatch({
+      type: "UPDATE_FIELD",
+      field: "lastName",
+      value: formData.lastName,
+    });
     dispatch({ type: "UPDATE_FIELD", field: "email", value: formData.email });
     dispatch({ type: "UPDATE_FIELD", field: "phone", value: formData.phone });
     dispatch({ type: "SAVE" });
   };
-  
+
   const handleReset = () => {
     setFormData({ ...profile }); // დააბრუნე გლობალური state-ის მნიშვნელობები
   };
@@ -98,7 +131,7 @@ import { useProfile } from "../../../contexts/ProfileContext";
 
 export default function PhoneListScreen() {
   const { profile } = useProfile(); // ნებისმიერი კომპონენტიდან წვდომა!
-  
+
   return (
     <View>
       <Text>გამარჯობა, {profile.firstName}! 👋</Text>
@@ -111,15 +144,18 @@ export default function PhoneListScreen() {
 ## 🎯 ძირითადი უპირატესობები
 
 ### ✅ გლობალური State
+
 - **ერთი state, მრავალი სქრინი**: profile state ხელმისაწვდომია ყველგან
 - **არა prop drilling**: არ გჭირდება props-ით გადაცემა
 
 ### ✅ useReducer Pattern
+
 - **Predictable State Updates**: ყველა ცვლილება reducer-ში
 - **Type Safety**: TypeScript types-ით
 - **Debugging**: მარტივად თვალყურის დევნება
 
 ### ✅ Custom Hook (useProfile)
+
 - **Clean API**: `const { profile, dispatch } = useProfile()`
 - **Error Handling**: ავტომატური შემოწმება Provider-ზე
 - **Reusability**: ერთხელ დაწერე, ყველგან გამოიყენე
@@ -192,6 +228,7 @@ UI Updates Everywhere! ✨
 ## 💡 მაგალითები
 
 ### პროფილის სახელის ცვლილება:
+
 1. გადადი Profile tab → რედაქტირება
 2. შეცვალე "სახელი" ველი
 3. დააჭირე "შენახვა"
@@ -201,6 +238,7 @@ UI Updates Everywhere! ✨
    - Laptops tab-ზე ("გამარჯობა, [სახელი]!")
 
 ### გაუქმება:
+
 1. რედაქტირებისას შეცვალე რამდენიმე ველი
 2. დააჭირე "გაუქმება"
 3. ყველა ველი უბრუნდება წინა მნიშვნელობებს

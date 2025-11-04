@@ -1,12 +1,32 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useProfile } from "../../../contexts/ProfileContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile } = useProfile();
+  const { authDispatch } = useAuth();
+
+  const handleLogout = () => {
+    Alert.alert(
+      "გასვლა",
+      "დარწმუნებული ხართ რომ გსურთ სისტემიდან გასვლა?",
+      [
+        { text: "გაუქმება", style: "cancel" },
+        {
+          text: "გასვლა",
+          style: "destructive",
+          onPress: () => {
+            authDispatch({ type: "LOGOUT" });
+            router.replace("/login");
+          },
+        },
+      ]
+    );
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -61,6 +81,14 @@ export default function ProfileScreen() {
       >
         <Ionicons name="create-outline" size={20} color="#fff" />
         <Text style={styles.editButtonText}>პროფილის რედაქტირება</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
+        <Ionicons name="log-out-outline" size={20} color="#fff" />
+        <Text style={styles.logoutButtonText}>გასვლა</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -123,13 +151,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "#007bff",
     marginHorizontal: 15,
-    marginBottom: 30,
+    marginBottom: 15,
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   editButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginLeft: 10,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    backgroundColor: "#dc3545",
+    marginHorizontal: 15,
+    marginBottom: 30,
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
