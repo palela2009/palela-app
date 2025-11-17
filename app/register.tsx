@@ -75,7 +75,7 @@ export default function RegisterScreen() {
       [
         {
           text: "კარგი",
-          onPress: () => router.replace("/login"),
+          onPress: () => router.replace("/"),
         },
       ]
     );
@@ -272,7 +272,7 @@ export default function RegisterScreen() {
 
               <View style={styles.loginContainer}>
                 <Text style={styles.loginText}>უკვე გაქვთ ანგარიში?</Text>
-                <TouchableOpacity onPress={() => router.replace("/login")}>
+                <TouchableOpacity onPress={() => router.replace("/")}>
                   <Text style={styles.loginLink}>შესვლა</Text>
                 </TouchableOpacity>
               </View>
