@@ -9,9 +9,27 @@ export default function PhoneListScreen() {
   const { profile } = useProfile(); 
   
   const phones = [
-    { id: "1", title: "iPhone 15", price: 4200, description: "ახალი მოდელი." },
-    { id: "2", title: "Samsung S24", price: 3900, description: "ბრწყინვალე კამერა." },
-    { id: "3", title: "Xiaomi 14", price: 1800, description: "კარგი ბალანსი ფასში." },
+    { 
+      id: "1", 
+      title: "iPhone 15", 
+      price: 4200, 
+      description: "ახალი მოდელი.",
+      image: "https://images.unsplash.com/photo-1695048064467-44abd0d3e16f?w=300&h=300&fit=crop"
+    },
+    { 
+      id: "2", 
+      title: "Samsung S24", 
+      price: 3900, 
+      description: "ბრწყინვალე კამერა.",
+      image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&h=300&fit=crop"
+    },
+    { 
+      id: "3", 
+      title: "Xiaomi 14", 
+      price: 1800, 
+      description: "კარგი ბალანსი ფასში.",
+      image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&h=300&fit=crop"
+    },
   ];
 
   return (
@@ -27,6 +45,7 @@ export default function PhoneListScreen() {
             title={item.title}
             price={item.price}
             description={item.description}
+            image={item.image}
             onDetailsPress={() => router.push(`/phones/${item.id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
           />
         )}

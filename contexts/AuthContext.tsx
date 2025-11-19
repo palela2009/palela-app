@@ -1,4 +1,8 @@
-import React, { createContext, useContext, useReducer, ReactNode } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const STORAGE_KEY = "@palela_app_user";
+const USERS_STORAGE_KEY = "@palela_app_users";
 
 interface User {
   firstName: string;
@@ -17,11 +21,16 @@ interface AuthState {
 type AuthAction =
   | { type: "REGISTER"; user: User }
   | { type: "LOGIN"; email: string; password: string }
-  | { type: "LOGOUT" };
+  | { type: "LOGOUT" }
+  | { type: "SET_AUTH"; user: User }
+  | { type: "LOAD_USERS"; users: User[] };
 
 interface AuthContextType {
   authState: AuthState;
   authDispatch: React.Dispatch<AuthAction>;
+  loadStoredUser: () => Promise<void>;
+  saveUser: (user: User) => Promise<void>;
+  clearUser: () => Promise<void>;
 }
 
 const initialAuthState: AuthState = {
@@ -65,6 +74,19 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         currentUser: null,
       };
 
+    case "SET_AUTH":
+      return {
+        ...state,
+        isAuthenticated: true,
+        currentUser: action.user,
+      };
+
+    case "LOAD_USERS":
+      return {
+        ...state,
+        users: action.users,
+      };
+
     default:
       return state;
   }
@@ -75,8 +97,70 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, authDispatch] = useReducer(authReducer, initialAuthState);
 
+  useEffect(() => {
+    loadStoredUsers();
+  }, []);
+
+  const loadStoredUsers = async () => {
+    try {
+      const usersJson = await AsyncStorage.getItem(USERS_STORAGE_KEY);
+      if (usersJson) {
+        const users = JSON.parse(usersJson);
+        authDispatch({ type: "LOAD_USERS", users });
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+    }
+  };
+
+  const saveUser = async (user: User) => {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      authDispatch({ type: "SET_AUTH", user });
+    } catch (error) {
+      console.error("Error saving user:", error);
+      throw error;
+    }
+  };
+
+  const loadStoredUser = async () => {
+    try {
+      const userJson = await AsyncStorage.getItem(STORAGE_KEY);
+      if (userJson) {
+        const user = JSON.parse(userJson);
+        authDispatch({ type: "SET_AUTH", user });
+      }
+    } catch (error) {
+      console.error("Error loading stored user:", error);
+    }
+  };
+
+  const clearUser = async () => {
+    try {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      authDispatch({ type: "LOGOUT" });
+    } catch (error) {
+      console.error("Error clearing user:", error);
+      throw error;
+    }
+  };
+
+  const saveUsersToStorage = async (users: User[]) => {
+    try {
+      await AsyncStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    } catch (error) {
+      console.error("Error saving users:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (authState.users.length > 0) {
+      saveUsersToStorage(authState.users);
+    }
+  }, [authState.users]);
+
   return (
-    <AuthContext.Provider value={{ authState, authDispatch }}>
+    <AuthContext.Provider value={{ authState, authDispatch, loadStoredUser, saveUser, clearUser }}>
       {children}
     </AuthContext.Provider>
   );

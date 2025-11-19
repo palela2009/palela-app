@@ -9,9 +9,27 @@ export default function LaptopListScreen() {
   const { profile } = useProfile(); 
   
   const laptops = [
-    { id: "1", title: "MacBook Air M3", price: 5000, description: "ძლიერი და მსუბუქი." },
-    { id: "2", title: "Asus TUF", price: 4200, description: "გეიმინგისთვის შესაფერისი." },
-    { id: "3", title: "HP Spectre", price: 4700, description: "პროფესიონალური დიზაინი." },
+    { 
+      id: "1", 
+      title: "MacBook Air M3", 
+      price: 5000, 
+      description: "ძლიერი და მსუბუქი.",
+      image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop"
+    },
+    { 
+      id: "2", 
+      title: "Asus TUF", 
+      price: 4200, 
+      description: "გეიმინგისთვის შესაფერისი.",
+      image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&h=300&fit=crop"
+    },
+    { 
+      id: "3", 
+      title: "HP Spectre", 
+      price: 4700, 
+      description: "პროფესიონალური დიზაინი.",
+      image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=300&fit=crop"
+    },
   ];
 
   return (
@@ -28,6 +46,7 @@ export default function LaptopListScreen() {
             title={item.title}
             price={item.price}
             description={item.description}
+            image={item.image}
             onDetailsPress={() => router.push(`/laptops/${item.id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
           />
         )}

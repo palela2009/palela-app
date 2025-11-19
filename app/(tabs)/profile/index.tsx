@@ -8,9 +8,9 @@ import { useAuth } from "../../../contexts/AuthContext";
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile } = useProfile();
-  const { authDispatch } = useAuth();
+  const { clearUser } = useAuth();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       "გასვლა",
       "დარწმუნებული ხართ რომ გსურთ სისტემიდან გასვლა?",
@@ -19,9 +19,14 @@ export default function ProfileScreen() {
         {
           text: "გასვლა",
           style: "destructive",
-          onPress: () => {
-            authDispatch({ type: "LOGOUT" });
-            router.replace("/login");
+          onPress: async () => {
+            try {
+              await clearUser();
+              router.replace("/login");
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("შეცდომა", "გასვლისას მოხდა შეცდომა");
+            }
           },
         },
       ]

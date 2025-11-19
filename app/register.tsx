@@ -15,24 +15,37 @@ import { Formik } from "formik";
 import * as Yup from "yup";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
+import { useProfile } from "../contexts/ProfileContext";
 
 
 const RegisterSchema = Yup.object().shape({
   firstName: Yup.string()
     .min(2, "სახელი უნდა იყოს მინიმუმ 2 სიმბოლო")
+    .max(50, "სახელი ძალიან გრძელია")
+    .matches(/^[ა-ჰa-zA-Z\s]+$/, "სახელი უნდა შეიცავდეს მხოლოდ ასოებს")
+    .trim()
     .required("სახელი სავალდებულოა"),
   lastName: Yup.string()
     .min(2, "გვარი უნდა იყოს მინიმუმ 2 სიმბოლო")
+    .max(50, "გვარი ძალიან გრძელია")
+    .matches(/^[ა-ჰa-zA-Z\s]+$/, "გვარი უნდა შეიცავდეს მხოლოდ ასოებს")
+    .trim()
     .required("გვარი სავალდებულოა"),
   email: Yup.string()
     .email("გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა")
+    .lowercase()
+    .trim()
     .required("ელ-ფოსტა სავალდებულოა"),
   phone: Yup.string()
-    .matches(/^[0-9+\s-]+$/, "გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი")
+    .matches(/^[0-9+\s()-]+$/, "გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი")
     .min(9, "ტელეფონის ნომერი ძალიან მოკლეა")
+    .max(20, "ტელეფონის ნომერი ძალიან გრძელია")
+    .trim()
     .required("ტელეფონის ნომერი სავალდებულოა"),
   password: Yup.string()
     .min(6, "პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო")
+    .max(50, "პაროლი ძალიან გრძელია")
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)/, "პაროლი უნდა შეიცავდეს ასოებსა და ციფრებს")
     .required("პაროლი სავალდებულოა"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "პაროლები არ ემთხვევა")
@@ -41,9 +54,10 @@ const RegisterSchema = Yup.object().shape({
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { authState, authDispatch } = useAuth();
+  const { authState, authDispatch, saveUser } = useAuth();
+  const { dispatch: profileDispatch } = useProfile();
 
-  const handleRegister = (values: {
+  const handleRegister = async (values: {
     firstName: string;
     lastName: string;
     email: string;
@@ -51,34 +65,57 @@ export default function RegisterScreen() {
     password: string;
     confirmPassword: string;
   }) => {
-    const existingUser = authState.users.find((u) => u.email === values.email);
+    try {
+      const existingUser = authState.users.find((u) => u.email.toLowerCase() === values.email.toLowerCase());
 
-    if (existingUser) {
-      Alert.alert("შეცდომა", "ამ ელ-ფოსტით იუზერი უკვე რეგისტრირებულია");
-      return;
-    }
+      if (existingUser) {
+        Alert.alert("შეცდომა", "ამ ელ-ფოსტით იუზერი უკვე რეგისტრირებულია");
+        return;
+      }
 
-    authDispatch({
-      type: "REGISTER",
-      user: {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        phone: values.phone,
+      const newUser = {
+        firstName: values.firstName.trim(),
+        lastName: values.lastName.trim(),
+        email: values.email.toLowerCase().trim(),
+        phone: values.phone.trim(),
         password: values.password,
-      },
-    });
+      };
 
-    Alert.alert(
-      "წარმატება",
-      "თქვენ წარმატებით დარეგისტრირდით! გთხოვთ შეხვიდეთ სისტემაში.",
-      [
-        {
-          text: "კარგი",
-          onPress: () => router.replace("/login"),
+      authDispatch({
+        type: "REGISTER",
+        user: newUser,
+      });
+
+      await saveUser(newUser);
+
+      profileDispatch({
+        type: "LOAD_USER",
+        user: {
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          email: newUser.email,
+          phone: newUser.phone,
         },
-      ]
-    );
+      });
+
+      Alert.alert(
+        "წარმატება",
+        "თქვენ წარმატებით დარეგისტრირდით და შეხვედით სისტემაში!",
+        [
+          {
+            text: "კარგი",
+            onPress: () => router.replace("/(tabs)/phones"),
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        "შეცდომა",
+        "რეგისტრაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან.",
+        [{ text: "კარგი" }]
+      );
+      console.error("Registration error:", error);
+    }
   };
 
   return (
@@ -104,6 +141,8 @@ export default function RegisterScreen() {
           }}
           validationSchema={RegisterSchema}
           onSubmit={handleRegister}
+          validateOnChange={false}
+          validateOnBlur={true}
         >
           {({
             handleChange,
@@ -116,7 +155,7 @@ export default function RegisterScreen() {
             <View style={styles.formContainer}>
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>სახელი</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.firstName && errors.firstName && styles.inputError]}>
                   <Ionicons
                     name="person-outline"
                     size={20}
@@ -140,7 +179,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>გვარი</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.lastName && errors.lastName && styles.inputError]}>
                   <Ionicons
                     name="person-outline"
                     size={20}
@@ -164,7 +203,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>ელ-ფოსტა</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.email && errors.email && styles.inputError]}>
                   <Ionicons
                     name="mail-outline"
                     size={20}
@@ -190,7 +229,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>ტელეფონის ნომერი</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.phone && errors.phone && styles.inputError]}>
                   <Ionicons
                     name="call-outline"
                     size={20}
@@ -215,7 +254,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>პაროლი</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.password && errors.password && styles.inputError]}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
@@ -240,7 +279,7 @@ export default function RegisterScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>პაროლის დადასტურება</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.confirmPassword && errors.confirmPassword && styles.inputError]}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
@@ -337,6 +376,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e0e0e0",
     paddingHorizontal: 15,
+  },
+  inputError: {
+    borderColor: "#dc3545",
+    borderWidth: 2,
   },
   icon: {
     marginRight: 10,

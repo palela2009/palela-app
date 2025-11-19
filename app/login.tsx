@@ -21,30 +21,29 @@ import { useProfile } from "../contexts/ProfileContext";
 const LoginSchema = Yup.object().shape({
   email: Yup.string()
     .email("გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა")
+    .lowercase()
+    .trim()
     .required("ელ-ფოსტა სავალდებულოა"),
   password: Yup.string()
     .min(6, "პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო")
+    .max(50, "პაროლი ძალიან გრძელია")
     .required("პაროლი სავალდებულოა"),
 });
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { authState, authDispatch } = useAuth();
+  const { authState, authDispatch, saveUser } = useAuth();
   const { dispatch: profileDispatch } = useProfile();
 
-  const handleLogin = (values: { email: string; password: string }) => {
-    authDispatch({
-      type: "LOGIN",
-      email: values.email,
-      password: values.password,
-    });
-
-    setTimeout(() => {
+  const handleLogin = async (values: { email: string; password: string }) => {
+    try {
       const user = authState.users.find(
-        (u) => u.email === values.email && u.password === values.password
+        (u) => u.email.toLowerCase() === values.email.toLowerCase().trim() && u.password === values.password
       );
 
       if (user) {
+        await saveUser(user);
+
         profileDispatch({
           type: "LOAD_USER",
           user: {
@@ -62,9 +61,20 @@ export default function LoginScreen() {
           },
         ]);
       } else {
-        Alert.alert("შეცდომა", "არასწორი ელ-ფოსტა ან პაროლი");
+        Alert.alert(
+          "შეცდომა",
+          "არასწორი ელ-ფოსტა ან პაროლი. გთხოვთ შეამოწმოთ თქვენი მონაცემები და სცადოთ თავიდან.",
+          [{ text: "კარგი" }]
+        );
       }
-    }, 100);
+    } catch (error) {
+      Alert.alert(
+        "შეცდომა",
+        "ავტორიზაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან.",
+        [{ text: "კარგი" }]
+      );
+      console.error("Login error:", error);
+    }
   };
 
   return (
@@ -83,6 +93,8 @@ export default function LoginScreen() {
           initialValues={{ email: "", password: "" }}
           validationSchema={LoginSchema}
           onSubmit={handleLogin}
+          validateOnChange={false}
+          validateOnBlur={true}
         >
           {({
             handleChange,
@@ -95,7 +107,7 @@ export default function LoginScreen() {
             <View style={styles.formContainer}>
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>ელ-ფოსტა</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.email && errors.email && styles.inputError]}>
                   <Ionicons
                     name="mail-outline"
                     size={20}
@@ -121,7 +133,7 @@ export default function LoginScreen() {
 
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>პაროლი</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, touched.password && errors.password && styles.inputError]}>
                   <Ionicons
                     name="lock-closed-outline"
                     size={20}
@@ -162,7 +174,7 @@ export default function LoginScreen() {
           )}
         </Formik>
 
-        {/* Debug info */}
+        
         {authState.users.length > 0 && (
           <View style={styles.debugContainer}>
             <Text style={styles.debugTitle}>
@@ -232,6 +244,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e0e0e0",
     paddingHorizontal: 15,
+  },
+  inputError: {
+    borderColor: "#dc3545",
+    borderWidth: 2,
   },
   icon: {
     marginRight: 10,

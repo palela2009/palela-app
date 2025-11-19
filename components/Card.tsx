@@ -1,22 +1,32 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 
 interface CardProps {
   title: string;
   price: number | string;
   description: string;
+  image?: string;
   onDetailsPress: () => void;
 }
 
-export default function Card({ title, price, description, onDetailsPress }: CardProps) {
+export default function Card({ title, price, description, image, onDetailsPress }: CardProps) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.price}>ფასი: {price} ₾</Text>
-      <Text style={styles.description}>{description}</Text>
-      <TouchableOpacity style={styles.button} onPress={onDetailsPress}>
-        <Text style={styles.buttonText}>დეტალები</Text>
-      </TouchableOpacity>
+      {image && (
+        <Image 
+          source={{ uri: image }} 
+          style={styles.image}
+          resizeMode="cover"
+        />
+      )}
+      <View style={styles.content}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.price}>ფასი: {price} ₾</Text>
+        <Text style={styles.description}>{description}</Text>
+        <TouchableOpacity style={styles.button} onPress={onDetailsPress}>
+          <Text style={styles.buttonText}>დეტალები</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -25,7 +35,6 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
     borderRadius: 10,
-    padding: 15,
     marginHorizontal: 15,
     marginBottom: 15,
     elevation: 3,
@@ -33,6 +42,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    overflow: "hidden",
+  },
+  image: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "#f0f0f0",
+  },
+  content: {
+    padding: 15,
   },
   title: {
     fontSize: 20,

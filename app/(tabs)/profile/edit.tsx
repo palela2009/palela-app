@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -9,47 +9,61 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { Formik } from "formik";
+import * as Yup from "yup";
 import { Ionicons } from "@expo/vector-icons";
 import { useProfile } from "../../../contexts/ProfileContext";
+
+const ProfileSchema = Yup.object().shape({
+  firstName: Yup.string()
+    .min(2, "სახელი უნდა იყოს მინიმუმ 2 სიმბოლო")
+    .max(50, "სახელი ძალიან გრძელია")
+    .matches(/^[ა-ჰa-zA-Z\s]+$/, "სახელი უნდა შეიცავდეს მხოლოდ ასოებს")
+    .required("სახელი სავალდებულოა"),
+  lastName: Yup.string()
+    .min(2, "გვარი უნდა იყოს მინიმუმ 2 სიმბოლო")
+    .max(50, "გვარი ძალიან გრძელია")
+    .matches(/^[ა-ჰa-zA-Z\s]+$/, "გვარი უნდა შეიცავდეს მხოლოდ ასოებს")
+    .required("გვარი სავალდებულოა"),
+  email: Yup.string()
+    .email("გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა")
+    .required("ელ-ფოსტა სავალდებულოა"),
+  phone: Yup.string()
+    .matches(/^[0-9+\s()-]+$/, "გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი")
+    .min(9, "ტელეფონის ნომერი ძალიან მოკლეა")
+    .max(20, "ტელეფონის ნომერი ძალიან გრძელია")
+    .required("ტელეფონის ნომერი სავალდებულოა"),
+});
 
 export default function EditProfileScreen() {
   const router = useRouter();
   const { profile, dispatch } = useProfile();
 
-  const [formData, setFormData] = useState({
-    firstName: profile.firstName,
-    lastName: profile.lastName,
-    email: profile.email,
-    phone: profile.phone,
-  });
+  const handleSave = (values: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  }) => {
+    try {
+      dispatch({ type: "UPDATE_FIELD", field: "firstName", value: values.firstName });
+      dispatch({ type: "UPDATE_FIELD", field: "lastName", value: values.lastName });
+      dispatch({ type: "UPDATE_FIELD", field: "email", value: values.email });
+      dispatch({ type: "UPDATE_FIELD", field: "phone", value: values.phone });
+      dispatch({ type: "SAVE" });
 
-  const handleSave = () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      Alert.alert("შეცდომა", "გთხოვთ შეავსოთ ყველა ველი");
-      return;
+      Alert.alert("წარმატება", "პროფილი წარმატებით განახლდა", [
+        {
+          text: "კარგი",
+          onPress: () => router.back(),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert("შეცდომა", "პროფილის განახლება ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.");
     }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      Alert.alert("შეცდომა", "გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა");
-      return;
-    }
-
-    dispatch({ type: "UPDATE_FIELD", field: "firstName", value: formData.firstName });
-    dispatch({ type: "UPDATE_FIELD", field: "lastName", value: formData.lastName });
-    dispatch({ type: "UPDATE_FIELD", field: "email", value: formData.email });
-    dispatch({ type: "UPDATE_FIELD", field: "phone", value: formData.phone });
-    dispatch({ type: "SAVE" });
-
-    Alert.alert("წარმატება", "პროფილი წარმატებით განახლდა", [
-      {
-        text: "კარგი",
-        onPress: () => router.back(),
-      },
-    ]);
   };
 
-  const handleReset = () => {
+  const handleReset = (resetForm: () => void) => {
     Alert.alert(
       "გაუქმება",
       "დარწმუნებული ხართ რომ გსურთ ცვლილებების გაუქმება?",
@@ -57,14 +71,7 @@ export default function EditProfileScreen() {
         { text: "არა", style: "cancel" },
         {
           text: "დიახ",
-          onPress: () => {
-            setFormData({
-              firstName: profile.firstName,
-              lastName: profile.lastName,
-              email: profile.email,
-              phone: profile.phone,
-            });
-          },
+          onPress: () => resetForm(),
         },
       ]
     );
@@ -72,90 +79,115 @@ export default function EditProfileScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>პროფილის რედაქტირება</Text>
+      <Formik
+        initialValues={{
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          email: profile.email,
+          phone: profile.phone,
+        }}
+        validationSchema={ProfileSchema}
+        onSubmit={handleSave}
+        validateOnChange={false}
+        validateOnBlur={true}
+      >
+        {({ handleChange, handleBlur, handleSubmit, values, errors, touched, resetForm }) => (
+          <>
+            <View style={styles.card}>
+              <Text style={styles.title}>პროფილის რედაქტირება</Text>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>სახელი</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              value={formData.firstName}
-              onChangeText={(value) =>
-                setFormData({ ...formData, firstName: value })
-              }
-              placeholder="შეიყვანეთ სახელი"
-            />
-          </View>
-        </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>სახელი</Text>
+                <View style={[styles.inputWrapper, touched.firstName && errors.firstName && styles.inputError]}>
+                  <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
+                  <TextInput
+                    style={styles.input}
+                    value={values.firstName}
+                    onChangeText={handleChange("firstName")}
+                    onBlur={handleBlur("firstName")}
+                    placeholder="შეიყვანეთ სახელი"
+                  />
+                </View>
+                {touched.firstName && errors.firstName && (
+                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                )}
+              </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>გვარი</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              value={formData.lastName}
-              onChangeText={(value) =>
-                setFormData({ ...formData, lastName: value })
-              }
-              placeholder="შეიყვანეთ გვარი"
-            />
-          </View>
-        </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>გვარი</Text>
+                <View style={[styles.inputWrapper, touched.lastName && errors.lastName && styles.inputError]}>
+                  <Ionicons name="person-outline" size={20} color="#666" style={styles.icon} />
+                  <TextInput
+                    style={styles.input}
+                    value={values.lastName}
+                    onChangeText={handleChange("lastName")}
+                    onBlur={handleBlur("lastName")}
+                    placeholder="შეიყვანეთ გვარი"
+                  />
+                </View>
+                {touched.lastName && errors.lastName && (
+                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                )}
+              </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>ელ-ფოსტა</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              value={formData.email}
-              onChangeText={(value) =>
-                setFormData({ ...formData, email: value })
-              }
-              placeholder="example@email.com"
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-        </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>ელ-ფოსტა</Text>
+                <View style={[styles.inputWrapper, touched.email && errors.email && styles.inputError]}>
+                  <Ionicons name="mail-outline" size={20} color="#666" style={styles.icon} />
+                  <TextInput
+                    style={styles.input}
+                    value={values.email}
+                    onChangeText={handleChange("email")}
+                    onBlur={handleBlur("email")}
+                    placeholder="example@email.com"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+                {touched.email && errors.email && (
+                  <Text style={styles.errorText}>{errors.email}</Text>
+                )}
+              </View>
 
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>ტელეფონის ნომერი</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="call-outline" size={20} color="#666" style={styles.icon} />
-            <TextInput
-              style={styles.input}
-              value={formData.phone}
-              onChangeText={(value) =>
-                setFormData({ ...formData, phone: value })
-              }
-              placeholder="+995 555 12 34 56"
-              keyboardType="phone-pad"
-            />
-          </View>
-        </View>
-      </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>ტელეფონის ნომერი</Text>
+                <View style={[styles.inputWrapper, touched.phone && errors.phone && styles.inputError]}>
+                  <Ionicons name="call-outline" size={20} color="#666" style={styles.icon} />
+                  <TextInput
+                    style={styles.input}
+                    value={values.phone}
+                    onChangeText={handleChange("phone")}
+                    onBlur={handleBlur("phone")}
+                    placeholder="+995 555 12 34 56"
+                    keyboardType="phone-pad"
+                  />
+                </View>
+                {touched.phone && errors.phone && (
+                  <Text style={styles.errorText}>{errors.phone}</Text>
+                )}
+              </View>
+            </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.button, styles.saveButton]}
-          onPress={handleSave}
-        >
-          <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-          <Text style={styles.buttonText}>შენახვა</Text>
-        </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.button, styles.saveButton]}
+                onPress={() => handleSubmit()}
+              >
+                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                <Text style={styles.buttonText}>შენახვა</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.button, styles.resetButton]}
-          onPress={handleReset}
-        >
-          <Ionicons name="refresh-outline" size={20} color="#fff" />
-          <Text style={styles.buttonText}>გაუქმება</Text>
-        </TouchableOpacity>
-      </View>
+              <TouchableOpacity
+                style={[styles.button, styles.resetButton]}
+                onPress={() => handleReset(resetForm)}
+              >
+                <Ionicons name="refresh-outline" size={20} color="#fff" />
+                <Text style={styles.buttonText}>გაუქმება</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </Formik>
     </ScrollView>
   );
 }
@@ -196,6 +228,10 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
     paddingHorizontal: 12,
   },
+  inputError: {
+    borderColor: "#dc3545",
+    borderWidth: 2,
+  },
   icon: {
     marginRight: 10,
   },
@@ -204,6 +240,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 16,
     color: "#333",
+  },
+  errorText: {
+    color: "#dc3545",
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
   },
   buttonContainer: {
     marginHorizontal: 15,
