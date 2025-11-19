@@ -92,11 +92,12 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   }
 };
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, authDispatch] = useReducer(authReducer, initialAuthState);
 
+<<<<<<< HEAD
   useEffect(() => {
     loadStoredUsers();
   }, []);
@@ -158,6 +159,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveUsersToStorage(authState.users);
     }
   }, [authState.users]);
+=======
+  console.log(authState)
+>>>>>>> 0ff2f17c7d3c1dbaf094c7b5d5492e59b5bccdaa
 
   return (
     <AuthContext.Provider value={{ authState, authDispatch, loadStoredUser, saveUser, clearUser }}>
@@ -167,9 +171,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  return useContext(AuthContext);
 }

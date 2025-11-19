@@ -81,6 +81,7 @@ export default function RegisterScreen() {
         password: values.password,
       };
 
+<<<<<<< HEAD
       authDispatch({
         type: "REGISTER",
         user: newUser,
@@ -95,6 +96,15 @@ export default function RegisterScreen() {
           lastName: newUser.lastName,
           email: newUser.email,
           phone: newUser.phone,
+=======
+    Alert.alert(
+      "წარმატება",
+      "თქვენ წარმატებით დარეგისტრირდით! გთხოვთ შეხვიდეთ სისტემაში.",
+      [
+        {
+          text: "კარგი",
+          onPress: () => router.replace("/"),
+>>>>>>> 0ff2f17c7d3c1dbaf094c7b5d5492e59b5bccdaa
         },
       });
 
@@ -311,7 +321,7 @@ export default function RegisterScreen() {
 
               <View style={styles.loginContainer}>
                 <Text style={styles.loginText}>უკვე გაქვთ ანგარიში?</Text>
-                <TouchableOpacity onPress={() => router.replace("/login")}>
+                <TouchableOpacity onPress={() => router.replace("/")}>
                   <Text style={styles.loginLink}>შესვლა</Text>
                 </TouchableOpacity>
               </View>
