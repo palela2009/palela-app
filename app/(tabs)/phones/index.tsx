@@ -1,36 +1,50 @@
-import React from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text } from "react-native";
+import React, { useEffect } from "react";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import Card from "../../../components/Card";
 import { useProfile } from "../../../contexts/ProfileContext";
+import { useProduct } from "../../../contexts/ProductContext";
+import { phoneService } from "../../../services/api";
 
 export default function PhoneListScreen() {
   const router = useRouter();
   const { profile } = useProfile(); 
-  
-  const phones = [
-    { 
-      id: "1", 
-      title: "iPhone 15", 
-      price: 4200, 
-      description: "ახალი მოდელი.",
-      image: "https://images.unsplash.com/photo-1695048064467-44abd0d3e16f?w=300&h=300&fit=crop"
-    },
-    { 
-      id: "2", 
-      title: "Samsung S24", 
-      price: 3900, 
-      description: "ბრწყინვალე კამერა.",
-      image: "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=300&h=300&fit=crop"
-    },
-    { 
-      id: "3", 
-      title: "Xiaomi 14", 
-      price: 1800, 
-      description: "კარგი ბალანსი ფასში.",
-      image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=300&h=300&fit=crop"
-    },
-  ];
+  const { state, dispatch } = useProduct();
+
+  useEffect(() => {
+    loadPhones();
+  }, []);
+
+  const loadPhones = async () => {
+    try {
+      dispatch({ type: "SET_LOADING", payload: true });
+      const data = await phoneService.getAll();
+      dispatch({ type: "SET_PHONES", payload: data });
+    } catch (error) {
+      console.error("Error loading phones:", error);
+      dispatch({ type: "SET_ERROR", payload: "Failed to load phones" });
+    }
+  };
+
+  if (state.loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>იტვირთება...</Text>
+      </View>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>{state.error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadPhones}>
+          <Text style={styles.retryText}>თავიდან ცდა</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -38,15 +52,15 @@ export default function PhoneListScreen() {
         <Text style={styles.welcomeText}>გამარჯობა, {profile.firstName}! 👋</Text>
       </View>
       <FlatList
-        data={phones}
-        keyExtractor={(item) => item.id}
+        data={state.phones}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <Card
             title={item.title}
             price={item.price}
             description={item.description}
             image={item.image}
-            onDetailsPress={() => router.push(`/phones/${item.id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
+            onDetailsPress={() => router.push(`/phones/${item._id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
           />
         )}
       />
@@ -59,6 +73,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
   header: {
     backgroundColor: "#fff",
     padding: 15,
@@ -69,5 +87,27 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#d32f2f",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });

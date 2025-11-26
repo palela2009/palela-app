@@ -1,36 +1,50 @@
-import React from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text } from "react-native";
+import React, { useEffect } from "react";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import Card from "../../../components/Card";
 import { useProfile } from "../../../contexts/ProfileContext";
+import { useProduct } from "../../../contexts/ProductContext";
+import { laptopService } from "../../../services/api";
 
 export default function LaptopListScreen() {
   const router = useRouter();
   const { profile } = useProfile(); 
-  
-  const laptops = [
-    { 
-      id: "1", 
-      title: "MacBook Air M3", 
-      price: 5000, 
-      description: "ძლიერი და მსუბუქი.",
-      image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop"
-    },
-    { 
-      id: "2", 
-      title: "Asus TUF", 
-      price: 4200, 
-      description: "გეიმინგისთვის შესაფერისი.",
-      image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=300&h=300&fit=crop"
-    },
-    { 
-      id: "3", 
-      title: "HP Spectre", 
-      price: 4700, 
-      description: "პროფესიონალური დიზაინი.",
-      image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=300&h=300&fit=crop"
-    },
-  ];
+  const { state, dispatch } = useProduct();
+
+  useEffect(() => {
+    loadLaptops();
+  }, []);
+
+  const loadLaptops = async () => {
+    try {
+      dispatch({ type: "SET_LOADING", payload: true });
+      const data = await laptopService.getAll();
+      dispatch({ type: "SET_LAPTOPS", payload: data });
+    } catch (error) {
+      console.error("Error loading laptops:", error);
+      dispatch({ type: "SET_ERROR", payload: "Failed to load laptops" });
+    }
+  };
+
+  if (state.loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>იტვირთება...</Text>
+      </View>
+    );
+  }
+
+  if (state.error) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>{state.error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadLaptops}>
+          <Text style={styles.retryText}>თავიდან ცდა</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -39,15 +53,15 @@ export default function LaptopListScreen() {
         <Text style={styles.subText}>ლეპტოპები შენთვის</Text>
       </View>
       <FlatList
-        data={laptops}
-        keyExtractor={(item) => item.id}
+        data={state.laptops}
+        keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <Card
             title={item.title}
             price={item.price}
             description={item.description}
             image={item.image}
-            onDetailsPress={() => router.push(`/laptops/${item.id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
+            onDetailsPress={() => router.push(`/laptops/${item._id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
           />
         )}
       />
@@ -59,6 +73,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  centered: {
+    justifyContent: "center",
+    alignItems: "center",
   },
   header: {
     backgroundColor: "#fff",
@@ -75,5 +93,27 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginTop: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#d32f2f",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#007AFF",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
