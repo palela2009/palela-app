@@ -1,32 +1,16 @@
 import React, { useEffect } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator } from "react-native";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import Card from "../../../components/Card";
 import { useProfile } from "../../../contexts/ProfileContext";
-import { useProduct } from "../../../contexts/ProductContext";
-import { laptopService } from "../../../services/api";
+import { useLaptops } from "../../../api/laptops/useLaptops";
 
 export default function LaptopListScreen() {
   const router = useRouter();
   const { profile } = useProfile(); 
-  const { state, dispatch } = useProduct();
+  const { data: laptops, isLoading, error, refetch, isRefetching } = useLaptops();
 
-  useEffect(() => {
-    loadLaptops();
-  }, []);
-
-  const loadLaptops = async () => {
-    try {
-      dispatch({ type: "SET_LOADING", payload: true });
-      const data = await laptopService.getAll();
-      dispatch({ type: "SET_LAPTOPS", payload: data });
-    } catch (error) {
-      console.error("Error loading laptops:", error);
-      dispatch({ type: "SET_ERROR", payload: "Failed to load laptops" });
-    }
-  };
-
-  if (state.loading) {
+  if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
         <ActivityIndicator size="large" color="#007AFF" />
@@ -35,11 +19,11 @@ export default function LaptopListScreen() {
     );
   }
 
-  if (state.error) {
+  if (error) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <Text style={styles.errorText}>{state.error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadLaptops}>
+        <Text style={styles.errorText}>{error.message}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryText}>თავიდან ცდა</Text>
         </TouchableOpacity>
       </View>
@@ -53,7 +37,7 @@ export default function LaptopListScreen() {
         <Text style={styles.subText}>ლეპტოპები შენთვის</Text>
       </View>
       <FlatList
-        data={state.laptops}
+        data={laptops}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <Card
@@ -64,6 +48,14 @@ export default function LaptopListScreen() {
             onDetailsPress={() => router.push(`/laptops/${item._id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
           />
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={() => refetch()}
+            colors={["#007AFF"]}
+            tintColor="#007AFF"
+          />
+        }
       />
     </View>
   );
