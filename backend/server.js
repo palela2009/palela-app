@@ -18,9 +18,14 @@ mongoose.connect(process.env.MONGODB_URI, {
 
 const phonesRouter = require('./routes/phones');
 const laptopsRouter = require('./routes/laptops');
+const authRouter = require('./routes/auth');
+const profileRouter = require('./routes/profile');
+const authMiddleware = require('./middleware/auth');
 
-app.use('/api/phones', phonesRouter);
-app.use('/api/laptops', laptopsRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/profile', profileRouter);
+app.use('/api/phones', authMiddleware, phonesRouter);
+app.use('/api/laptops', authMiddleware, laptopsRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Palela App Backend API' });

@@ -32,28 +32,14 @@ const LoginSchema = Yup.object().shape({
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { authState, authDispatch, saveUser } = useAuth();
+  const { loginWithToken } = useAuth();
   const { dispatch: profileDispatch } = useProfile();
 
   const handleLogin = async (values: { email: string; password: string }) => {
     try {
-      const user = authState.users.find(
-        (u) => u.email.toLowerCase() === values.email.toLowerCase().trim() && u.password === values.password
-      );
+      const success = await loginWithToken(values.email, values.password);
 
-      if (user) {
-        await saveUser(user);
-
-        profileDispatch({
-          type: "LOAD_USER",
-          user: {
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            phone: user.phone,
-          },
-        });
-
+      if (success) {
         Alert.alert("წარმატება", "თქვენ წარმატებით შეხვედით სისტემაში!", [
           {
             text: "კარგი",
@@ -173,20 +159,6 @@ export default function LoginScreen() {
             </View>
           )}
         </Formik>
-
-        
-        {authState.users.length > 0 && (
-          <View style={styles.debugContainer}>
-            <Text style={styles.debugTitle}>
-              რეგისტრირებული იუზერები: {authState.users.length}
-            </Text>
-            {authState.users.map((user, index) => (
-              <Text key={index} style={styles.debugText}>
-                {user.email}
-              </Text>
-            ))}
-          </View>
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

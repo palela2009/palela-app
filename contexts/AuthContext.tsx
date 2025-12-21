@@ -1,10 +1,13 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useReducer, ReactNode, useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStorage } from "../utils/tokenStorage";
+import { authService } from "../services/api";
 
 const STORAGE_KEY = "@palela_app_user";
 const USERS_STORAGE_KEY = "@palela_app_users";
 
 interface User {
+  id?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -16,6 +19,7 @@ interface AuthState {
   isAuthenticated: boolean;
   currentUser: User | null;
   users: User[];
+  isLoading: boolean;
 }
 
 type AuthAction =
@@ -23,7 +27,8 @@ type AuthAction =
   | { type: "LOGIN"; email: string; password: string }
   | { type: "LOGOUT" }
   | { type: "SET_AUTH"; user: User }
-  | { type: "LOAD_USERS"; users: User[] };
+  | { type: "LOAD_USERS"; users: User[] }
+  | { type: "SET_LOADING"; isLoading: boolean };
 
 interface AuthContextType {
   authState: AuthState;
@@ -31,12 +36,16 @@ interface AuthContextType {
   loadStoredUser: () => Promise<void>;
   saveUser: (user: User) => Promise<void>;
   clearUser: () => Promise<void>;
+  loginWithToken: (email: string, password: string) => Promise<boolean>;
+  verifyAndRestoreSession: () => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const initialAuthState: AuthState = {
   isAuthenticated: false,
   currentUser: null,
   users: [],
+  isLoading: true,
 };
 
 const authReducer = (state: AuthState, action: AuthAction): AuthState => {
@@ -79,12 +88,19 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         ...state,
         isAuthenticated: true,
         currentUser: action.user,
+        isLoading: false,
       };
 
     case "LOAD_USERS":
       return {
         ...state,
         users: action.users,
+      };
+
+    case "SET_LOADING":
+      return {
+        ...state,
+        isLoading: action.isLoading,
       };
 
     default:
@@ -98,8 +114,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, authDispatch] = useReducer(authReducer, initialAuthState);
 
   useEffect(() => {
-    loadStoredUsers();
+    initializeAuth();
   }, []);
+
+  const initializeAuth = async () => {
+    await loadStoredUsers();
+    await verifyAndRestoreSession();
+  };
+
+  const verifyAndRestoreSession = async (): Promise<boolean> => {
+    try {
+      authDispatch({ type: "SET_LOADING", isLoading: true });
+      const token = await tokenStorage.getToken();
+      
+      if (!token) {
+        authDispatch({ type: "SET_LOADING", isLoading: false });
+        return false;
+      }
+
+      const response = await authService.verifyToken();
+      
+      if (response.success && response.user) {
+        authDispatch({ type: "SET_AUTH", user: response.user });
+        return true;
+      }
+      
+      await tokenStorage.removeToken();
+      authDispatch({ type: "SET_LOADING", isLoading: false });
+      return false;
+    } catch (error) {
+      console.error("Token verification failed:", error);
+      await tokenStorage.removeToken();
+      authDispatch({ type: "SET_LOADING", isLoading: false });
+      return false;
+    }
+  };
+
+  const loginWithToken = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await authService.login(email, password);
+      
+      if (response.success && response.token) {
+        await tokenStorage.saveToken(response.token);
+        authDispatch({ type: "SET_AUTH", user: response.user });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Login failed:", error);
+      return false;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authService.logout();
+      await clearUser();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   const loadStoredUsers = async () => {
     try {
@@ -160,7 +235,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authState.users]);
 
   return (
-    <AuthContext.Provider value={{ authState, authDispatch, loadStoredUser, saveUser, clearUser }}>
+    <AuthContext.Provider value={{ 
+      authState, 
+      authDispatch, 
+      loadStoredUser, 
+      saveUser, 
+      clearUser,
+      loginWithToken,
+      verifyAndRestoreSession,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );

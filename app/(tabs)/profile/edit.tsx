@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Formik } from "formik";
 import * as Yup from "yup";
 import { Ionicons } from "@expo/vector-icons";
-import { useProfile } from "../../../contexts/ProfileContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { profileService } from "../../../services/api";
 
 const ProfileSchema = Yup.object().shape({
   firstName: Yup.string()
@@ -37,7 +39,28 @@ const ProfileSchema = Yup.object().shape({
 
 export default function EditProfileScreen() {
   const router = useRouter();
-  const { profile, dispatch } = useProfile();
+  const queryClient = useQueryClient();
+
+  const { data: profileData, isLoading, error, refetch } = useQuery({
+    queryKey: ['profile'],
+    queryFn: profileService.getProfile,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: profileService.updateProfile,
+    onSuccess: async () => {
+      await refetch();
+      Alert.alert("წარმატება", "პროფილი წარმატებით განახლდა", [
+        {
+          text: "კარგი",
+          onPress: () => router.back(),
+        },
+      ]);
+    },
+    onError: () => {
+      Alert.alert("შეცდომა", "პროფილის განახლება ვერ მოხერხდა");
+    },
+  });
 
   const handleSave = (values: {
     firstName: string;
@@ -45,23 +68,29 @@ export default function EditProfileScreen() {
     email: string;
     phone: string;
   }) => {
-    try {
-      dispatch({ type: "UPDATE_FIELD", field: "firstName", value: values.firstName });
-      dispatch({ type: "UPDATE_FIELD", field: "lastName", value: values.lastName });
-      dispatch({ type: "UPDATE_FIELD", field: "email", value: values.email });
-      dispatch({ type: "UPDATE_FIELD", field: "phone", value: values.phone });
-      dispatch({ type: "SAVE" });
-
-      Alert.alert("წარმატება", "პროფილი წარმატებით განახლდა", [
-        {
-          text: "კარგი",
-          onPress: () => router.back(),
-        },
-      ]);
-    } catch (error) {
-      Alert.alert("შეცდომა", "პროფილის განახლება ვერ მოხერხდა. გთხოვთ სცადოთ თავიდან.");
-    }
+    updateMutation.mutate(values);
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007bff" />
+      </View>
+    );
+  }
+
+  if (error || !profileData?.success) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>პროფილის ჩატვირთვა ვერ მოხერხდა</Text>
+        <TouchableOpacity onPress={() => refetch()} style={styles.retryButton}>
+          <Text style={styles.retryButtonText}>თავიდან ცდა</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const profile = profileData.profile;
 
   const handleReset = (resetForm: () => void) => {
     Alert.alert(
@@ -109,7 +138,7 @@ export default function EditProfileScreen() {
                   />
                 </View>
                 {touched.firstName && errors.firstName && (
-                  <Text style={styles.errorText}>{errors.firstName}</Text>
+                  <Text style={styles.errorText}>{String(errors.firstName)}</Text>
                 )}
               </View>
 
@@ -126,7 +155,7 @@ export default function EditProfileScreen() {
                   />
                 </View>
                 {touched.lastName && errors.lastName && (
-                  <Text style={styles.errorText}>{errors.lastName}</Text>
+                  <Text style={styles.errorText}>{String(errors.lastName)}</Text>
                 )}
               </View>
 
@@ -145,7 +174,7 @@ export default function EditProfileScreen() {
                   />
                 </View>
                 {touched.email && errors.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
+                  <Text style={styles.errorText}>{String(errors.email)}</Text>
                 )}
               </View>
 
@@ -163,23 +192,35 @@ export default function EditProfileScreen() {
                   />
                 </View>
                 {touched.phone && errors.phone && (
-                  <Text style={styles.errorText}>{errors.phone}</Text>
+                  <Text style={styles.errorText}>{String(errors.phone)}</Text>
                 )}
               </View>
             </View>
 
             <View style={styles.buttonContainer}>
               <TouchableOpacity
-                style={[styles.button, styles.saveButton]}
+                style={[
+                  styles.button, 
+                  styles.saveButton,
+                  updateMutation.isPending && styles.disabledButton
+                ]}
                 onPress={() => handleSubmit()}
+                disabled={updateMutation.isPending}
               >
-                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                <Text style={styles.buttonText}>შენახვა</Text>
+                {updateMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
+                    <Text style={styles.buttonText}>შენახვა</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.button, styles.resetButton]}
                 onPress={() => handleReset(resetForm)}
+                disabled={updateMutation.isPending}
               >
                 <Ionicons name="refresh-outline" size={20} color="#fff" />
                 <Text style={styles.buttonText}>გაუქმება</Text>
@@ -265,10 +306,34 @@ const styles = StyleSheet.create({
   resetButton: {
     backgroundColor: "#6c757d",
   },
+  disabledButton: {
+    opacity: 0.5,
+  },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
     marginLeft: 10,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  retryButton: {
+    marginTop: 10,
+    backgroundColor: "#007bff",
+    padding: 10,
+    borderRadius: 5,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
   },
 });

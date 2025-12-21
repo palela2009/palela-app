@@ -8,7 +8,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 export default function ProfileScreen() {
   const router = useRouter();
   const { profile } = useProfile();
-  const { clearUser } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -21,7 +21,7 @@ export default function ProfileScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await clearUser();
+              await logout();
               router.replace("/login");
             } catch (error) {
               console.error("Logout error:", error);

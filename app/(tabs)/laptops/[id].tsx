@@ -61,7 +61,7 @@ export default function LaptopDetailsScreen() {
           <Text style={styles.sectionTitle}>სპეციფიკაციები:</Text>
           <Text style={styles.text}>• პროცესორი: {specs.processor}</Text>
           <Text style={styles.text}>• RAM: {specs.ram}</Text>
-          <Text style={styles.text}>• შენახვა: {specs.storage}</Text>
+          <Text style={styles.text}>• შენახვა: {specs.storage}</Text>  
           <Text style={styles.text}>• ეკრანი: {specs.screen}</Text>
           <Text style={styles.text}>• ბატარეა: {specs.battery}</Text>
         </View>
