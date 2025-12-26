@@ -1,19 +1,32 @@
-import React, { useEffect } from "react";
-import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator, RefreshControl } from "react-native";
+import React from "react";
+import { View, FlatList, StyleSheet, TouchableOpacity, Text, ActivityIndicator, RefreshControl, StatusBar } from "react-native";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import Card from "../../../components/Card";
 import { useProfile } from "../../../contexts/ProfileContext";
 import { useLaptops } from "../../../api/laptops/useLaptops";
+import { LinearGradient } from "expo-linear-gradient";
+
+const COLORS = {
+  primary: '#FF6B6B',
+  primaryDark: '#E55555',
+  background: '#F8F9FE',
+  surface: '#FFFFFF',
+  text: '#1A1A2E',
+  textSecondary: '#666687',
+  textWhite: '#FFFFFF',
+  error: '#E74C3C',
+};
 
 export default function LaptopListScreen() {
   const router = useRouter();
-  const { profile } = useProfile(); 
+  const { profile } = useProfile();
   const { data: laptops, isLoading, error, refetch, isRefetching } = useLaptops();
 
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>იტვირთება...</Text>
       </View>
     );
@@ -22,6 +35,7 @@ export default function LaptopListScreen() {
   if (error) {
     return (
       <View style={[styles.container, styles.centered]}>
+        <Ionicons name="cloud-offline-outline" size={60} color={COLORS.error} />
         <Text style={styles.errorText}>{error.message}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryText}>თავიდან ცდა</Text>
@@ -32,29 +46,35 @@ export default function LaptopListScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.welcomeText}>გამარჯობა, {profile.firstName}! 👋</Text>
-        <Text style={styles.subText}>ლეპტოპები შენთვის</Text>
-      </View>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient colors={[COLORS.primary, COLORS.primaryDark]} style={styles.header}>
+        <View style={styles.headerContent}>
+          <View>
+            <Text style={styles.greeting}>გამარჯობა, {profile.firstName}! 👋</Text>
+            <Text style={styles.subGreeting}>აირჩიეთ ლეპტოპი</Text>
+          </View>
+          <View style={styles.headerIcon}>
+            <Ionicons name="laptop" size={28} color={COLORS.textWhite} />
+          </View>
+        </View>
+      </LinearGradient>
+
       <FlatList
         data={laptops}
         keyExtractor={(item) => item._id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
           <Card
             title={item.title}
             price={item.price}
             description={item.description}
             image={item.image}
-            onDetailsPress={() => router.push(`/laptops/${item._id}?title=${item.title}&price=${item.price}&description=${item.description}`)}
+            onDetailsPress={() => router.push(`/laptops/${item._id}?title=${item.title}&price=${item.price}&description=${item.description}&image=${encodeURIComponent(item.image)}`)}
           />
         )}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={() => refetch()}
-            colors={["#007AFF"]}
-            tintColor="#007AFF"
-          />
+          <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} colors={[COLORS.primary]} tintColor={COLORS.primary} />
         }
       />
     </View>
@@ -62,50 +82,16 @@ export default function LaptopListScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  header: {
-    backgroundColor: "#fff",
-    padding: 15,
-    marginBottom: 10,
-    elevation: 2,
-  },
-  welcomeText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  subText: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 5,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: "#666",
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#d32f2f",
-    textAlign: "center",
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  centered: { justifyContent: "center", alignItems: "center" },
+  header: { paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20, borderBottomLeftRadius: 25, borderBottomRightRadius: 25 },
+  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  greeting: { fontSize: 22, fontWeight: "bold", color: COLORS.textWhite },
+  subGreeting: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  headerIcon: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  listContent: { paddingTop: 20, paddingBottom: 20 },
+  loadingText: { marginTop: 12, fontSize: 16, color: COLORS.textSecondary },
+  errorText: { fontSize: 16, color: COLORS.error, textAlign: "center", marginTop: 12, marginBottom: 20 },
+  retryButton: { backgroundColor: COLORS.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
+  retryText: { color: COLORS.textWhite, fontSize: 16, fontWeight: "bold" },
 });

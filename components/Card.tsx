@@ -1,5 +1,9 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { COLORS, SHADOWS, SIZES, FONTS } from "../constants/theme";
+
+const { width } = Dimensions.get('window');
 
 interface CardProps {
   title: string;
@@ -11,72 +15,111 @@ interface CardProps {
 
 export default function Card({ title, price, description, image, onDetailsPress }: CardProps) {
   return (
-    <View style={styles.card}>
-      {image && (
-        <Image 
-          source={{ uri: image }} 
-          style={styles.image}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.content}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.price}>ფასი: {price} ₾</Text>
-        <Text style={styles.description}>{description}</Text>
-        <TouchableOpacity style={styles.button} onPress={onDetailsPress}>
-          <Text style={styles.buttonText}>დეტალები</Text>
-        </TouchableOpacity>
+    <TouchableOpacity 
+      style={styles.card} 
+      onPress={onDetailsPress}
+      activeOpacity={0.9}
+    >
+      <View style={styles.imageContainer}>
+        {image ? (
+          <Image 
+            source={{ uri: image }} 
+            style={styles.image}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.imagePlaceholder}>
+            <Ionicons name="image-outline" size={50} color={COLORS.textLight} />
+          </View>
+        )}
+        <View style={styles.priceTag}>
+          <Text style={styles.priceText}>{price} ₾</Text>
+        </View>
       </View>
-    </View>
+      <View style={styles.content}>
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={styles.description} numberOfLines={2}>{description}</Text>
+        <View style={styles.footer}>
+          <TouchableOpacity style={styles.button} onPress={onDetailsPress}>
+            <Text style={styles.buttonText}>დეტალები</Text>
+            <Ionicons name="arrow-forward" size={16} color={COLORS.textWhite} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    marginHorizontal: 15,
-    marginBottom: 15,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.borderRadius.lg,
+    marginHorizontal: SIZES.md,
+    marginBottom: SIZES.md,
+    ...SHADOWS.medium,
     overflow: "hidden",
+  },
+  imageContainer: {
+    position: 'relative',
   },
   image: {
     width: "100%",
-    height: 200,
-    backgroundColor: "#f0f0f0",
+    height: 180,
+    backgroundColor: COLORS.surfaceLight,
+  },
+  imagePlaceholder: {
+    width: "100%",
+    height: 180,
+    backgroundColor: COLORS.surfaceLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  priceTag: {
+    position: 'absolute',
+    bottom: SIZES.sm,
+    right: SIZES.sm,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.xs,
+    borderRadius: SIZES.borderRadius.full,
+    ...SHADOWS.small,
+  },
+  priceText: {
+    color: COLORS.textWhite,
+    fontSize: SIZES.font.md,
+    ...FONTS.bold,
   },
   content: {
-    padding: 15,
+    padding: SIZES.md,
   },
   title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#333",
-  },
-  price: {
-    fontSize: 16,
-    color: "#007bff",
-    marginBottom: 5,
+    fontSize: SIZES.font.lg,
+    color: COLORS.text,
+    marginBottom: SIZES.xs,
+    ...FONTS.bold,
   },
   description: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 15,
+    fontSize: SIZES.font.sm,
+    color: COLORS.textSecondary,
+    lineHeight: 20,
+    marginBottom: SIZES.md,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
   },
   button: {
-    backgroundColor: "#007bff",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.md,
+    paddingVertical: SIZES.sm,
+    borderRadius: SIZES.borderRadius.md,
+    gap: SIZES.xs,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    color: COLORS.textWhite,
+    fontSize: SIZES.font.sm,
+    ...FONTS.semiBold,
   },
 });

@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Formik } from "formik";
@@ -16,415 +17,187 @@ import * as Yup from "yup";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
 import { useProfile } from "../contexts/ProfileContext";
+import { authService } from "../services/api";
+import { tokenStorage } from "../utils/tokenStorage";
+import { LinearGradient } from "expo-linear-gradient";
 
+const COLORS = {
+  primary: '#6C63FF',
+  primaryDark: '#5A52D5',
+  secondary: '#2ECC71',
+  secondaryDark: '#27AE60',
+  background: '#F8F9FE',
+  surface: '#FFFFFF',
+  surfaceLight: '#F5F6FA',
+  text: '#1A1A2E',
+  textSecondary: '#666687',
+  textLight: '#9999AA',
+  textWhite: '#FFFFFF',
+  border: '#E8E8F0',
+  error: '#E74C3C',
+};
 
 const RegisterSchema = Yup.object().shape({
-  firstName: Yup.string()
-    .min(2, "სახელი უნდა იყოს მინიმუმ 2 სიმბოლო")
-    .max(50, "სახელი ძალიან გრძელია")
-    .matches(/^[ა-ჰa-zA-Z\s]+$/, "სახელი უნდა შეიცავდეს მხოლოდ ასოებს")
-    .trim()
-    .required("სახელი სავალდებულოა"),
-  lastName: Yup.string()
-    .min(2, "გვარი უნდა იყოს მინიმუმ 2 სიმბოლო")
-    .max(50, "გვარი ძალიან გრძელია")
-    .matches(/^[ა-ჰa-zA-Z\s]+$/, "გვარი უნდა შეიცავდეს მხოლოდ ასოებს")
-    .trim()
-    .required("გვარი სავალდებულოა"),
-  email: Yup.string()
-    .email("გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა")
-    .lowercase()
-    .trim()
-    .required("ელ-ფოსტა სავალდებულოა"),
-  phone: Yup.string()
-    .matches(/^[0-9+\s()-]+$/, "გთხოვთ შეიყვანოთ სწორი ტელეფონის ნომერი")
-    .min(9, "ტელეფონის ნომერი ძალიან მოკლეა")
-    .max(20, "ტელეფონის ნომერი ძალიან გრძელია")
-    .trim()
-    .required("ტელეფონის ნომერი სავალდებულოა"),
-  password: Yup.string()
-    .min(6, "პაროლი უნდა იყოს მინიმუმ 6 სიმბოლო")
-    .max(50, "პაროლი ძალიან გრძელია")
-    .matches(/^(?=.*[A-Za-z])(?=.*\d)/, "პაროლი უნდა შეიცავდეს ასოებსა და ციფრებს")
-    .required("პაროლი სავალდებულოა"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "პაროლები არ ემთხვევა")
-    .required("პაროლის დადასტურება სავალდებულოა"),
+  firstName: Yup.string().min(2, "მინიმუმ 2 სიმბოლო").required("სახელი სავალდებულოა"),
+  lastName: Yup.string().min(2, "მინიმუმ 2 სიმბოლო").required("გვარი სავალდებულოა"),
+  email: Yup.string().email("გთხოვთ შეიყვანოთ სწორი ელ-ფოსტა").required("ელ-ფოსტა სავალდებულოა"),
+  phone: Yup.string().min(9, "მინიმუმ 9 სიმბოლო").required("ტელეფონი სავალდებულოა"),
+  password: Yup.string().min(6, "მინიმუმ 6 სიმბოლო").required("პაროლი სავალდებულოა"),
+  confirmPassword: Yup.string().oneOf([Yup.ref("password")], "პაროლები არ ემთხვევა").required("დაადასტურეთ პაროლი"),
 });
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const { authState, authDispatch, saveUser } = useAuth();
+  const { authDispatch } = useAuth();
   const { dispatch: profileDispatch } = useProfile();
 
-  const handleRegister = async (values: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-    confirmPassword: string;
-  }) => {
+  const handleRegister = async (values: any) => {
     try {
-      const existingUser = authState.users.find((u) => u.email.toLowerCase() === values.email.toLowerCase());
+      const name = `${values.firstName.trim()} ${values.lastName.trim()}`;
+      const email = values.email.toLowerCase().trim();
+      const response = await authService.register(name, email, values.password, values.phone.trim());
 
-      if (existingUser) {
-        Alert.alert("შეცდომა", "ამ ელ-ფოსტით იუზერი უკვე რეგისტრირებულია");
-        return;
+      if (response.success && response.token) {
+        await tokenStorage.saveToken(response.token);
+        authDispatch({ type: "SET_AUTH", user: response.user });
+        profileDispatch({
+          type: "LOAD_USER",
+          user: { firstName: values.firstName.trim(), lastName: values.lastName.trim(), email, phone: values.phone.trim() },
+        });
+        router.replace("/(tabs)/phones");
+      } else {
+        Alert.alert("შეცდომა", response.message || "რეგისტრაცია ვერ მოხერხდა");
       }
-
-      const newUser = {
-        firstName: values.firstName.trim(),
-        lastName: values.lastName.trim(),
-        email: values.email.toLowerCase().trim(),
-        phone: values.phone.trim(),
-        password: values.password,
-      };
-
-      authDispatch({
-        type: "REGISTER",
-        user: newUser,
-      });
-
-      await saveUser(newUser);
-
-      profileDispatch({
-        type: "LOAD_USER",
-        user: {
-          firstName: newUser.firstName,
-          lastName: newUser.lastName,
-          email: newUser.email,
-          phone: newUser.phone,
-        },
-      });
-
-      Alert.alert(
-        "წარმატება",
-        "თქვენ წარმატებით დარეგისტრირდით და შეხვედით სისტემაში!",
-        [
-          {
-            text: "კარგი",
-            onPress: () => router.replace("/(tabs)/phones"),
-          },
-        ]
-      );
-    } catch (error) {
-      Alert.alert(
-        "შეცდომა",
-        "რეგისტრაციის დროს მოხდა შეცდომა. გთხოვთ სცადოთ თავიდან.",
-        [{ text: "კარგი" }]
-      );
-      console.error("Registration error:", error);
+    } catch (error: any) {
+      Alert.alert("შეცდომა", error?.response?.data?.message || "რეგისტრაციის დროს მოხდა შეცდომა");
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Ionicons name="person-add" size={80} color="#28a745" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient colors={[COLORS.secondary, COLORS.secondaryDark]} style={styles.headerGradient}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.textWhite} />
+        </TouchableOpacity>
+        <View style={styles.headerContent}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="person-add" size={50} color={COLORS.textWhite} />
+          </View>
           <Text style={styles.title}>რეგისტრაცია</Text>
           <Text style={styles.subtitle}>შექმენით ახალი ანგარიში</Text>
         </View>
+      </LinearGradient>
 
-        <Formik
-          initialValues={{
-            firstName: "",
-            lastName: "",
-            email: "",
-            phone: "",
-            password: "",
-            confirmPassword: "",
-          }}
-          validationSchema={RegisterSchema}
-          onSubmit={handleRegister}
-          validateOnChange={false}
-          validateOnBlur={true}
-        >
-          {({
-            handleChange,
-            handleBlur,
-            handleSubmit,
-            values,
-            errors,
-            touched,
-          }) => (
-            <View style={styles.formContainer}>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>სახელი</Text>
-                <View style={[styles.inputWrapper, touched.firstName && errors.firstName && styles.inputError]}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.icon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="შეიყვანეთ სახელი"
-                    placeholderTextColor="#999"
-                    value={values.firstName}
-                    onChangeText={handleChange("firstName")}
-                    onBlur={handleBlur("firstName")}
-                    autoComplete="name"
-                  />
-                </View>
-                {errors.firstName && touched.firstName && (
-                  <Text style={styles.errorText}>{errors.firstName}</Text>
-                )}
-              </View>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.formWrapper}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.formCard}>
+            <Formik
+              initialValues={{ firstName: "", lastName: "", email: "", phone: "", password: "", confirmPassword: "" }}
+              validationSchema={RegisterSchema}
+              onSubmit={handleRegister}
+              validateOnChange={false}
+              validateOnBlur={true}
+            >
+              {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+                <>
+                  <View style={styles.row}>
+                    <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
+                      <Text style={styles.label}>სახელი</Text>
+                      <View style={[styles.inputWrapper, touched.firstName && errors.firstName && styles.inputError]}>
+                        <Ionicons name="person-outline" size={18} color={COLORS.textSecondary} />
+                        <TextInput style={styles.input} placeholder="სახელი" placeholderTextColor={COLORS.textLight} value={values.firstName} onChangeText={handleChange("firstName")} onBlur={handleBlur("firstName")} />
+                      </View>
+                      {errors.firstName && touched.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
+                    </View>
+                    <View style={[styles.inputContainer, { flex: 1, marginLeft: 8 }]}>
+                      <Text style={styles.label}>გვარი</Text>
+                      <View style={[styles.inputWrapper, touched.lastName && errors.lastName && styles.inputError]}>
+                        <Ionicons name="person-outline" size={18} color={COLORS.textSecondary} />
+                        <TextInput style={styles.input} placeholder="გვარი" placeholderTextColor={COLORS.textLight} value={values.lastName} onChangeText={handleChange("lastName")} onBlur={handleBlur("lastName")} />
+                      </View>
+                      {errors.lastName && touched.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
+                    </View>
+                  </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>გვარი</Text>
-                <View style={[styles.inputWrapper, touched.lastName && errors.lastName && styles.inputError]}>
-                  <Ionicons
-                    name="person-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.icon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="შეიყვანეთ გვარი"
-                    placeholderTextColor="#999"
-                    value={values.lastName}
-                    onChangeText={handleChange("lastName")}
-                    onBlur={handleBlur("lastName")}
-                    autoComplete="name-family"
-                  />
-                </View>
-                {errors.lastName && touched.lastName && (
-                  <Text style={styles.errorText}>{errors.lastName}</Text>
-                )}
-              </View>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>ელ-ფოსტა</Text>
+                    <View style={[styles.inputWrapper, touched.email && errors.email && styles.inputError]}>
+                      <Ionicons name="mail-outline" size={18} color={COLORS.textSecondary} />
+                      <TextInput style={styles.input} placeholder="example@email.com" placeholderTextColor={COLORS.textLight} value={values.email} onChangeText={handleChange("email")} onBlur={handleBlur("email")} keyboardType="email-address" autoCapitalize="none" />
+                    </View>
+                    {errors.email && touched.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                  </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>ელ-ფოსტა</Text>
-                <View style={[styles.inputWrapper, touched.email && errors.email && styles.inputError]}>
-                  <Ionicons
-                    name="mail-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.icon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="example@email.com"
-                    placeholderTextColor="#999"
-                    value={values.email}
-                    onChangeText={handleChange("email")}
-                    onBlur={handleBlur("email")}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoComplete="email"
-                  />
-                </View>
-                {errors.email && touched.email && (
-                  <Text style={styles.errorText}>{errors.email}</Text>
-                )}
-              </View>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>ტელეფონი</Text>
+                    <View style={[styles.inputWrapper, touched.phone && errors.phone && styles.inputError]}>
+                      <Ionicons name="call-outline" size={18} color={COLORS.textSecondary} />
+                      <TextInput style={styles.input} placeholder="+995 555 123 456" placeholderTextColor={COLORS.textLight} value={values.phone} onChangeText={handleChange("phone")} onBlur={handleBlur("phone")} keyboardType="phone-pad" />
+                    </View>
+                    {errors.phone && touched.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+                  </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>ტელეფონის ნომერი</Text>
-                <View style={[styles.inputWrapper, touched.phone && errors.phone && styles.inputError]}>
-                  <Ionicons
-                    name="call-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.icon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="+995 555 12 34 56"
-                    placeholderTextColor="#999"
-                    value={values.phone}
-                    onChangeText={handleChange("phone")}
-                    onBlur={handleBlur("phone")}
-                    keyboardType="phone-pad"
-                    autoComplete="tel"
-                  />
-                </View>
-                {errors.phone && touched.phone && (
-                  <Text style={styles.errorText}>{errors.phone}</Text>
-                )}
-              </View>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>პაროლი</Text>
+                    <View style={[styles.inputWrapper, touched.password && errors.password && styles.inputError]}>
+                      <Ionicons name="lock-closed-outline" size={18} color={COLORS.textSecondary} />
+                      <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={COLORS.textLight} value={values.password} onChangeText={handleChange("password")} onBlur={handleBlur("password")} secureTextEntry />
+                    </View>
+                    {errors.password && touched.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                  </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>პაროლი</Text>
-                <View style={[styles.inputWrapper, touched.password && errors.password && styles.inputError]}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.icon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="მინიმუმ 6 სიმბოლო"
-                    placeholderTextColor="#999"
-                    value={values.password}
-                    onChangeText={handleChange("password")}
-                    onBlur={handleBlur("password")}
-                    secureTextEntry
-                    autoComplete="password"
-                  />
-                </View>
-                {errors.password && touched.password && (
-                  <Text style={styles.errorText}>{errors.password}</Text>
-                )}
-              </View>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>პაროლის დადასტურება</Text>
+                    <View style={[styles.inputWrapper, touched.confirmPassword && errors.confirmPassword && styles.inputError]}>
+                      <Ionicons name="lock-closed-outline" size={18} color={COLORS.textSecondary} />
+                      <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={COLORS.textLight} value={values.confirmPassword} onChangeText={handleChange("confirmPassword")} onBlur={handleBlur("confirmPassword")} secureTextEntry />
+                    </View>
+                    {errors.confirmPassword && touched.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+                  </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>პაროლის დადასტურება</Text>
-                <View style={[styles.inputWrapper, touched.confirmPassword && errors.confirmPassword && styles.inputError]}>
-                  <Ionicons
-                    name="lock-closed-outline"
-                    size={20}
-                    color="#666"
-                    style={styles.icon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="გაიმეორეთ პაროლი"
-                    placeholderTextColor="#999"
-                    value={values.confirmPassword}
-                    onChangeText={handleChange("confirmPassword")}
-                    onBlur={handleBlur("confirmPassword")}
-                    secureTextEntry
-                  />
-                </View>
-                {errors.confirmPassword && touched.confirmPassword && (
-                  <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-                )}
-              </View>
+                  <TouchableOpacity style={styles.registerBtn} onPress={() => handleSubmit()} activeOpacity={0.8}>
+                    <LinearGradient colors={[COLORS.secondary, COLORS.secondaryDark]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.gradientButton}>
+                      <Ionicons name="checkmark-circle-outline" size={22} color={COLORS.textWhite} />
+                      <Text style={styles.registerBtnText}>რეგისტრაცია</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.registerButton}
-                onPress={() => handleSubmit()}
-              >
-                <Ionicons name="checkmark-circle-outline" size={20} color="#fff" />
-                <Text style={styles.registerButtonText}>რეგისტრაცია</Text>
-              </TouchableOpacity>
-
-              <View style={styles.loginContainer}>
-                <Text style={styles.loginText}>უკვე გაქვთ ანგარიში?</Text>
-                <TouchableOpacity onPress={() => router.replace("/")}>
-                  <Text style={styles.loginLink}>შესვლა</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-        </Formik>
-      </ScrollView>
-    </KeyboardAvoidingView>
+                  <TouchableOpacity style={styles.loginLink} onPress={() => router.push("/login")}>
+                    <Text style={styles.loginLinkText}>უკვე გაქვთ ანგარიში? <Text style={styles.loginLinkBold}>შესვლა</Text></Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </Formik>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-    paddingVertical: 40,
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#333",
-    marginTop: 20,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginTop: 10,
-  },
-  formContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 15,
-    padding: 25,
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  inputContainer: {
-    marginBottom: 18,
-  },
-  label: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-    fontWeight: "600",
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f9f9f9",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    paddingHorizontal: 15,
-  },
-  inputError: {
-    borderColor: "#dc3545",
-    borderWidth: 2,
-  },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 15,
-    fontSize: 16,
-    color: "#333",
-  },
-  errorText: {
-    color: "#dc3545",
-    fontSize: 12,
-    marginTop: 5,
-    marginLeft: 5,
-  },
-  registerButton: {
-    flexDirection: "row",
-    backgroundColor: "#28a745",
-    padding: 18,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 10,
-  },
-  registerButtonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
-  loginContainer: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 20,
-    alignItems: "center",
-  },
-  loginText: {
-    color: "#666",
-    fontSize: 14,
-  },
-  loginLink: {
-    color: "#007bff",
-    fontSize: 14,
-    fontWeight: "bold",
-    marginLeft: 5,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  headerGradient: { paddingTop: Platform.OS === 'ios' ? 60 : 50, paddingBottom: 50, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  backButton: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 40, left: 20, zIndex: 10, padding: 8 },
+  headerContent: { alignItems: "center" },
+  iconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+  title: { fontSize: 28, color: COLORS.textWhite, fontWeight: 'bold' },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  formWrapper: { flex: 1, marginTop: -25 },
+  scrollContent: { flexGrow: 1, paddingHorizontal: 20, paddingBottom: 40 },
+  formCard: { backgroundColor: COLORS.surface, borderRadius: 20, padding: 20, shadowColor: '#1A1A2E', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 8 },
+  row: { flexDirection: 'row' },
+  inputContainer: { marginBottom: 16 },
+  label: { fontSize: 13, color: COLORS.textSecondary, marginBottom: 6, fontWeight: '600' },
+  inputWrapper: { flexDirection: "row", alignItems: "center", backgroundColor: COLORS.surfaceLight, borderRadius: 10, borderWidth: 1.5, borderColor: COLORS.border, paddingHorizontal: 12, gap: 8 },
+  inputError: { borderColor: COLORS.error },
+  input: { flex: 1, paddingVertical: 14, fontSize: 15, color: COLORS.text },
+  errorText: { color: COLORS.error, fontSize: 11, marginTop: 4 },
+  registerBtn: { marginTop: 8, borderRadius: 12, overflow: 'hidden' },
+  gradientButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 16, gap: 8 },
+  registerBtnText: { color: COLORS.textWhite, fontSize: 17, fontWeight: 'bold' },
+  loginLink: { alignItems: 'center', marginTop: 20 },
+  loginLinkText: { color: COLORS.textSecondary, fontSize: 14 },
+  loginLinkBold: { color: COLORS.primary, fontWeight: 'bold' },
 });
